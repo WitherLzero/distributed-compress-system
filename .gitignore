@@ -5,3 +5,6 @@ meeting/
 # Local scratch: personal notes, tooling explorations and private findings.
 # Kept on disk for reference; deliberately never tracked.
 local/
+
+# Transient lock files left by the editing tooling. Never part of the repo.
+.dsh-ops-update-*.lock

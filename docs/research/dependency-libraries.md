@@ -627,17 +627,341 @@ service CompressService {
 | 21 | 原系统如何**处理大文件**？有无分片？（A.5） | `issues/05` |
 | 22 | **写回**由谁做、存储端有无版本机制？（A.12/A.14） | `issues/05` |
 | 13 | 选 server 决策位置：master 主导 vs BRPC LB（A.9） | `issues/05` |
-| — | B. CMake 调研（含 BRPC 依赖链管理方案） | 本文件待补 |
+| — | B. CMake 调研 | ✅ 见下 |
 | — | C. 压缩库调研（LZ4 / LZMA API 与原理） | 本文件待补 |
+
+---
+
+# B. CMake（工程组织）
+
+> **结论先行**：本项目**确定使用 CMake**（导师指定；且 BRPC 官方自身也用 CMake，生态与资料量碾压 Blade）。
+
+## B.0 关键认知纠偏
+
+### CMake **不是**构建工具，而是**构建系统的生成器**
+
+```
+CMake  →  [生成]  →  Makefile / build.ninja / .sln
+                        ↓
+                    make / ninja / MSBuild   ← 这些才是真正的构建工具
+```
+
+**CMake 的产物是"构建脚本"，它自己不编译任何东西。** 这是最容易误解的一点。
+
+| | 传统做法 | CMake 做法 |
+|---|---|---|
+| 你写 | 手写 `Makefile` | 写 `CMakeLists.txt` |
+| 换平台 | **重写一份** | 同一份，换 generator |
+| 换编译器 | 手改一堆变量 | `-DCMAKE_CXX_COMPILER=...` |
+
+> ✅ **推论：不需要学 Makefile。** 它是 CMake 的**输出**，不是输入——就像写 Markdown 不用管渲染出的 HTML。
+
+### 两个阶段
+
+```
+① Configure（配置）— 只做一次，或改了 CMakeLists 之后
+   cmake -B build -G Ninja
+   → 读所有 CMakeLists.txt、探测编译器、找依赖 → 生成 build/ 下构建脚本
+
+② Build（构建）— 天天用
+   cmake --build build -j16
+   → 实际调用 ninja/make 去编译链接
+```
+
+- **`-S` = source 目录，`-B` = build 目录** → "**out-of-source build**"，构建产物不污染源码
+- 现代写法 `cmake -B build` 即可（CMake 3.13+）
+
+**Generator（`-G`）** = "生成哪种构建脚本"：
+
+| Generator | 说明 |
+|---|---|
+| `Unix Makefiles` | 生成 Makefile（Linux 默认） |
+| `Ninja` | 生成 `build.ninja` —— **更快，推荐** |
+| `Visual Studio 17 2022` | 生成 `.sln`（Windows/MSVC） |
+
+---
+
+## B.1 核心概念：**Target（目标）**
+
+现代 CMake 围绕 **target** 组织。一个 target 就是"要造出来的一个东西"：
+
+| 类型 | 命令 | 产出 | 本项目 |
+|---|---|---|---|
+| **可执行** | `add_executable` | `.exe` / 无后缀二进制 | `compress_master`、`compress_server`、`mock_datanode`、`mock_scheduler` |
+| **库** | `add_library` | `.a` / `.so` / `.dll` | **`compress_client`（动态库）** |
+| 自定义 | `add_custom_target` | 任意命令 | 生成 proto 代码 |
+
+### ⭐ 现代 CMake 的精髓：三条命令
+
+```cmake
+# ❌ 旧式（全局变量，污染一切）
+include_directories(${BRPC_INCLUDE_DIR})
+link_libraries(brpc)
+add_executable(master master.cpp)
+# → 设置"向上传染"，其他目标也被影响，极难维护
+
+
+# ✅ 现代（target-based，只作用于指定目标）
+add_executable(master src/master/main.cpp)
+target_include_directories(master PRIVATE ${BRPC_INCLUDE_DIR})   # ① 头文件去哪找
+target_link_libraries(master PRIVATE brpc protobuf lz4 lzma)      # ② 链接什么
+target_compile_features(master PRIVATE cxx_std_17)                # ③ 需要哪些语言特性
+```
+
+> 🔑 **一句话**：现代 CMake 就是"**每个 target 自己声明需要什么**"，而非"全局设一堆变量"。**记住这三条就能读懂 90% 的现代 CMakeLists.txt。**
+
+### `PRIVATE` / `PUBLIC` / `INTERFACE` —— 决定依赖是否传递
+
+| 关键字 | 含义 | 何时用 |
+|---|---|---|
+| `PRIVATE` | 只有**我自己**用 | 实现细节（如 `.cpp` 里用的库） |
+| `PUBLIC` | 我用，**用我的人**也用 | 公开头文件里 `#include` 了它 |
+| `INTERFACE` | **我不用**，但用我的人要用 | 纯头文件库 |
+
+> **判断法则**：那个 `#include` 出现在**公开头文件**里 → `PUBLIC`；只在 **`.cpp` 里** → `PRIVATE`。
+
+---
+
+## B.2 本项目第一个 CMakeLists.txt
+
+### 顶层（仓库根）
+
+```cmake
+cmake_minimum_required(VERSION 3.16)      # 见 B.5 版本说明
+project(distributed-compress-system CXX)
+
+set(CMAKE_CXX_STANDARD 17)                # 全局：C++17
+set(CMAKE_CXX_STANDARD_REQUIRED ON)       # 不许降级
+
+find_package(Protobuf REQUIRED)
+find_package(LZ4 REQUIRED)
+find_package(BRPC REQUIRED)               # ← WSL 下可行；Windows 下找不到
+
+protobuf_generate_cpp(PROTO_SRCS PROTO_HDRS
+    proto/compress.proto
+    proto/master.proto
+)
+add_library(compress_proto STATIC ${PROTO_SRCS})
+target_link_libraries(compress_proto PUBLIC protobuf)
+target_include_directories(compress_proto PUBLIC ${CMAKE_CURRENT_BINARY_DIR})
+
+add_subdirectory(src/common)
+add_subdirectory(src/client)
+add_subdirectory(src/master)
+add_subdirectory(src/server)
+add_subdirectory(mock)
+```
+
+| 行 | 含义 | 类比 |
+|---|---|---|
+| `cmake_minimum_required` | 声明最低版本 | "需要 Python 3.10+" |
+| `project(...)` | 项目声明 | `package.json` 的 name |
+| `find_package(X REQUIRED)` | **找到库并定义变量/目标**；找不到即报错 | `import` / `require` |
+| `add_library(... STATIC ...)` | 造静态库（把 proto 生成代码打包） | —— |
+| `add_subdirectory(x)` | **去 x 目录读它的 CMakeLists.txt** | `import` 一个子模块 |
+
+> ⭐ `add_subdirectory` 是 CMake 的**模块化机制**：每个目录管自己的目标，顶层只管"有哪些目录"。
+
+### 子目录示例：`src/master/CMakeLists.txt`
+
+```cmake
+# ① 定义产出
+add_executable(compress_master
+    main.cpp
+    registry.cpp        # 注册表
+    heartbeat.cpp       # 心跳与判死
+    selector.cpp        # 选 server
+)
+
+# ② 依赖
+target_link_libraries(compress_master
+    PRIVATE
+        compress_proto     # proto 生成的代码
+        compress_common    # 公共工具
+        brpc
+        protobuf
+)
+
+# ③ 头文件
+target_include_directories(compress_master
+    PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+)
+```
+
+**一个 target 的描述永远长这样**：① 我是什么 → ② 我依赖谁 → ③ 头文件在哪。
+
+### 子目录示例：`src/client/CMakeLists.txt`（动态库，写法略不同）
+
+```cmake
+# ① SHARED = 动态库（.so）
+add_library(compress_client SHARED
+    compress_client.cpp
+    scanner.cpp          # 扫描线程
+    scheduler.cpp        # 选 server + 退避
+    compressor_lz4.cpp
+    compressor_lzma.cpp
+)
+
+# ② 依赖 —— 注意 PUBLIC/PRIVATE 的区别
+target_link_libraries(compress_client
+    PRIVATE
+        brpc
+        protobuf
+        compress_proto
+    PUBLIC
+        LZ4::LZ4              # ← 公开头文件里 include 了 lz4
+        LibLZMA::LibLZMA
+)
+
+# ③ 头文件 —— PUBLIC 因为 mock_datanode 要 include 我的头
+target_include_directories(compress_client
+    PUBLIC  include/
+    PRIVATE src/
+)
+
+# ④ lib 形态的工程细节
+set_target_properties(compress_client PROPERTIES
+    VERSION 1.0.0
+    SOVERSION 1
+    CXX_VISIBILITY_PRESET hidden    # 只导出显式标记的符号，避免污染宿主进程
+)
+```
+
+### 静态库 vs 动态库（一行之差）
+
+```cmake
+add_library(x STATIC ...)   # → libx.a    代码被复制进使用者
+add_library(x SHARED ...)   # → libx.so   运行时加载  ★ 我们要这个
+```
+
+**选择依据**：client 要以 **lib 形式嵌进 datanode**，且希望独立替换 → **`SHARED`（.so）**。
+
+---
+
+## B.3 本项目会得到的 5 个 target
+
+| Target | 类型 | 来源 |
+|---|---|---|
+| `compress_client` | **动态库（SHARED）** | `src/client` |
+| `compress_master` | 可执行 | `src/master` |
+| `compress_server` | 可执行 | `src/server` |
+| `mock_datanode` | 可执行 | `mock/datanode`（**实现 `IStorage`**，加载 client） |
+| `mock_scheduler` | 可执行 | `mock/scheduler` |
+
+---
+
+## B.4 依赖怎么引入：三种方式
+
+| 方式 | 命令 | 适合 | 本项目 |
+|---|---|---|---|
+| **① 系统包 / find_package** | `find_package(BRPC REQUIRED)` | 依赖已装在系统里 | ✅ **WSL 下最合适** |
+| **② 包管理器**（vcpkg / Conan） | toolchain 文件 + `find_package(... CONFIG)` | 依赖复杂、跨平台一致 | ⚠️ **vcpkg 不支持 Windows 上的 brpc**（`"supports": "!windows"`） |
+| **③ FetchContent** | `FetchContent_Declare/MakeAvailable` | 从源码拉、随项目构建 | ⚠️ BRPC 编译很重，会拖慢每次构建 |
+
+**本项目依赖清单**：
+
+```
+BRPC ──┬── protobuf   (序列化 + 代码生成)   必需
+       ├── gflags      (全局命令行参数)      必需
+       ├── leveldb     (仅 /rpcz 追踪需要)   ⚠️ 可选
+       └── openssl     (仅 https 需要)       ⚠️ 可选
+LZ4     (浅压缩)                            必需
+liblzma (深压缩)                            必需
+```
+
+> 💡 **BRPC 的 `leveldb` 与 `openssl` 都是可选项**（官方文档明确各自用途）。若不需要 rpcz 追踪与 SSL，**可以砍掉以简化依赖** —— 待与导师确认。
+
+### proto 代码生成接入构建
+
+```cmake
+find_package(Protobuf REQUIRED)
+
+protobuf_generate_cpp(PROTO_SRCS PROTO_HDRS
+    proto/compress.proto
+    proto/master.proto)
+
+# 独立的小库 target，其他目标链接它
+add_library(compress_proto ${PROTO_SRCS} ${PROTO_HDRS})
+target_link_libraries(compress_proto PUBLIC protobuf)
+target_include_directories(compress_proto PUBLIC ${CMAKE_CURRENT_BINARY_DIR})
+```
+
+> ⚠️ 生成的文件落在 `build/` 目录里，所以必须用 `${CMAKE_CURRENT_BINARY_DIR}` 把它加进 include 路径——**这个变量容易写错**。
+
+---
+
+## B.5 实操注意（4 个易踩的坑）
+
+| # | 事项 | 说明 |
+|---|---|---|
+| 1 | **CMake 版本下限** | 本机 MSYS2 是 **4.4.2**，而 WSL Ubuntu 20.04（BRPC Dockerfile 的基础镜像）默认是 **3.16**。建议声明 `cmake_minimum_required(VERSION 3.16)`，两边都能跑 |
+| 2 | **BRPC 的 find_package 包名** | BRPC 安装后提供的 CMake 配置包名**需实际验证**（可能需要手写 `FindBRPC.cmake`）。**这是 W3 第一个要踩的坑** |
+| 3 | **proto 生成路径** | 同 B.4 末尾——`${CMAKE_CURRENT_BINARY_DIR}` |
+| 4 | **`-DCMAKE_EXPORT_COMPILE_COMMANDS=ON`** | 建议一开始就开——生成 `compile_commands.json`，让 VS Code / clangd 的补全与跳转准确（BRPC 官方也推荐） |
+
+### 日常只需 3 条命令
+
+```bash
+cmake -B build -G Ninja        # ① 配置（一次）
+cmake --build build -j16       # ② 构建（天天）
+cmake -B build                 # ③ 改了 CMakeLists 后重新配置
+```
+
+> 不需要记 `make`，不需要读 Makefile。
+
+---
+
+## B.6 Blade 调研（对比结论）
+
+[Blade](https://github.com/blade-build/blade-build) 已演进到 **Blade 3**（比导师当年版本强很多）：
+
+| | **CMake** | **Blade** |
+|---|---|---|
+| 定位 | **通用**构建系统生成器，事实标准 | **大型 monorepo 专用**（腾讯 3000 万行代码级） |
+| 语法 | `CMakeLists.txt`（自家语言，啰嗦） | `BUILD`（**Python 语法**，声明式简洁） |
+| 依赖声明 | 手写 `target_link_libraries` | **自动推导间接依赖**（只声明直接依赖） |
+| 第三方库 | find_package / vcpkg / Conan | **原生集成 vcpkg**（`vcpkg#port:lib`） |
+| 平台 | **全平台** | Blade 3 已支持三平台（有 Windows CI） |
+| 后端 | 生成 make/ninja | 生成 **Ninja** 脚本（本身依赖 Ninja + Python 3.10+） |
+| 生态 | **极丰富**（资料、AI 可答、社区问答） | **较少**（腾讯/小米/百度/爱奇艺等内部用） |
+| 传承 | 事实标准 | 启发自 Google（后来的 Bazel 是 Google 自己的重写版） |
+
+**导师的评论是准确的**：Blade 好用、但流行度不如 CMake、资料更少。
+
+### 结论：用 CMake
+
+理由按重要性：
+
+1. **BRPC 官方自身就用 CMake** —— 依赖方一致，少一层摩擦
+2. **生态/资料量碾压** —— "AI 讲清楚就行"这条，Blade 资料明显不足
+3. **导师指定用 CMake**
+4. **Blade 的强项（monorepo、3000 万行）对我们 5 个 target 是降维打击**，收益为负（还多一条 Python+Ninja 依赖链）
+
+> 📌 **值得记下的权衡点**：Blade 的"**自动推导间接依赖**"确实解决了 CMake 一个真实痛点——CMake 要手写每个 target 链接什么，库多了容易漏。但本项目依赖就那么几个，手工写完全可控。
+
+---
+
+## B.7 前置阻塞：编译环境（见 `external-systems.md` §5）
+
+CMake 本身没问题，但**编译环境存在阻塞**：**BRPC 官方不支持 Windows**（vcpkg port 标注 `"supports": "!windows"`；依赖 epoll）。
+
+- 详细分析、WSL2 与 Docker 对比、Agent 操作 WSL 的可行性 → **`docs/research/external-systems.md` §5**
+- 待定项 → `issues/05` #25、#26
+
+---
 
 ## 参考
 
 - [BRPC 服务端 Basics](https://brpc.apache.org/docs/server/basics/) —— 附件、消息上限、并发限制、压缩
 - [BRPC 客户端 Basics](https://brpc.apache.org/docs/client/basics/) —— Channel、NamingService、LoadBalancer、连接类型、重试策略、附件
+- [BRPC getting started](https://brpc.apache.org/docs/en/getting_started.html) —— 依赖清单、支持环境（**无 Windows**）
+- [Blade 官方 README](https://github.com/blade-build/blade-build) —— Blade 3 特性与定位
+- [vcpkg brpc port](https://github.com/microsoft/vcpkg/blob/master/ports/brpc/vcpkg.json) —— `"supports": "!windows"`
 - 导师架构图：`docs/compress-system.drawio`
 
 ## Comments
 
 - **2026-10-19**：A 部分第一版整理完成。来源：BRPC 官方文档（server/client Basics 全篇精读）+ 各轮讨论。
   期间修正了一次错误归因（曾把"双重压缩/lost update"误记为 RPC 层问题，实际根因均在 **client**）。
-  待续：CMake 依赖管理、压缩库。
+- **2026-10-19**：**B 部分（CMake + Blade）完成**。要点：CMake 是生成器而非构建工具（不必学 Makefile）；现代用法为 target-based 三条命令；本项目 5 个 target；**发现 BRPC 不支持 Windows** 的编译环境阻塞（详见 `external-systems.md` §5）。
+  待续：C. 压缩库（LZ4 / LZMA）。

@@ -1,6 +1,6 @@
 # 02 — 依赖库调研（BRPC / CMake / 压缩库）
 
-- **Status**: in-progress（A 部分第一版已完成）
+- **Status**: in-progress（A、B 部分已完成，C 待补）
 - **Type**: research
 - **Blocked by**: —
 
@@ -9,9 +9,19 @@
 | 章节 | 状态 | 落点 |
 |---|---|---|
 | **A. BRPC + Protobuf** | ✅ **第一版完成** | `docs/research/dependency-libraries.md` §A |
-| B. CMake | ⬜ 未开始 | 同上（待补） |
+| **B. CMake（+ Blade 对比）** | ✅ **完成** | 同上 §B |
 | C. 压缩库（LZ4 / LZMA） | ⬜ 未开始 | 同上（待补） |
 | D. 概念补充 | ✅ 已覆盖 | `docs/research/external-systems.md` |
+
+### B 部分的主要结论（已归档）
+
+- ✅ **确定用 CMake**：BRPC 官方自身即用 CMake，生态资料碾压 Blade，导师亦指定
+- 🔑 **CMake 是"生成器"不是"构建工具"** → **不需要学 Makefile**（它是产物）
+- 🔑 现代用法 = **target-based 三条命令**（`target_link_libraries` / `target_include_directories` / `target_compile_features`）
+- 🔑 `PRIVATE` / `PUBLIC` / `INTERFACE` 判断法则：`#include` 在公开头文件 → PUBLIC；只在 `.cpp` → PRIVATE
+- 📦 本项目 **5 个 target**：1 个动态库（`compress_client`）+ 4 个可执行
+- ⚖️ **Blade**：大型 monorepo 专用（腾讯 3000 万行级）；强项"自动推导间接依赖"对我们 5 个 target 收益为负
+- 🚨 **前置阻塞**：BRPC 不支持 Windows → 编译环境见 `external-systems.md` §5
 
 ### A 部分的主要发现（已归档）
 
@@ -83,3 +93,7 @@
 - 2026-10-19：**A 部分第一版完成** → `docs/research/dependency-libraries.md` §A（A.0–A.18）。
   方法：精读 BRPC 官方 server/client Basics 全篇，结合各轮讨论；期间修正一次错误归因（"双重压缩/lost update"曾被误记为 RPC 层问题，实际根因均在 client）。
   下一步：B（CMake，含 BRPC 依赖链管理具体方案）→ C（压缩库）。
+- 2026-10-19：**B 部分（CMake + Blade 对比）完成** → `docs/research/dependency-libraries.md` §B（B.0–B.7）。
+  要点：CMake 是生成器非构建工具（不必学 Makefile）；target-based 三条命令；PRIVATE/PUBLIC 判断法则；本项目 5 个 target；Blade 定位对比与不采用的 4 条理由。
+  **附带发现（阻塞项）**：**BRPC 官方不支持 Windows**（vcpkg port 标注 `!windows`，依赖 epoll）→ 编译环境分析写入 `docs/research/external-systems.md` §5；同时补充了行业部署形态（§4.4）。
+  下一步：C（压缩库 LZ4 / LZMA）。

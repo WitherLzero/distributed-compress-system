@@ -59,6 +59,9 @@
 | 22 | **压缩后数据由谁写回存储？存储端有无版本机制？** | 我们推断**写回是 client 做的**（图注 `origin len/compress len` 在 client 侧；且压缩数据要"以附件形式拿回来"）。若确实如此，需要**版本号/CAS** 防 lost update，但底层存储是否提供版本机制未知 | ⬜ 待问 |
 | 23 | **RPC 超时怎么定？** | BRPC 默认 **500 ms**，而 LZMA 压 100 MB 需 ~100 秒 → 必然重试风暴。倾向按 `数据量÷带宽 + 数据量÷压缩速度 + 排队` 动态估算 | ⬜ 待问 |
 | 24 | **压缩任务的幂等性如何保证？**（重试导致重复压缩） | BRPC 层不提供（官方 FAQ 明言"not solved on RPC layer"）。倾向用**版本号（乐观并发）** | ⬜ 待问 |
+| **25** | **BRPC 官方不支持 Windows，本地用什么环境编译？**（WSL2 / Docker / 云主机 / 只出设计不出二进制） | 已确认 vcpkg 的 brpc port 标注 `"supports": "!android & !windows"`；官方支持列表只有 Linux / macOS（WSL 归 Linux）。BRPC 的 IO 依赖 epoll/EDISP 等 Linux 设施。而我的环境是 **Windows + MSYS2(UCRT64)**，这直接影响 W3「打通编译流程」交付物 | ⬜ 待问 |
+| **26** | **原系统的离线集群调度器是 YARN 还是 K8s？** datanode 是裸金属还是容器？ | 这决定 `compress_server` 的真实部署形态（K8s → 无状态 Pod；YARN → 裸金属/容器进程），也决定 `mock_scheduler` 该模拟哪种调度语义。行业现状：计算层在迁 K8s，存储层仍以裸金属为主（详见 `docs/research/external-systems.md` §4.4） | ⬜ 待问 |
+| **27** | **BRPC 的 `leveldb` / `openssl` 依赖能否裁掉？** | 二者都是**可选**：leveldb 仅 `/rpcz` 追踪需要、openssl 仅 https 需要。若都不需要，可大幅简化构建依赖 | ⬜ 待问 |
 
 ---
 
@@ -71,4 +74,6 @@
 ## Comments
 
 - 2026-10-19：创建。累计自第 1 课后各轮讨论，共 20 条。
-- 2026-10-19：**新增 E 组（#21–#24）**，来自 BRPC 依赖调研（`docs/research/dependency-libraries.md`）。共 **24 条**。
+- 2026-10-19：**新增 E 组（#21–#24）**，来自 BRPC 依赖调研（`docs/research/dependency-libraries.md`）。
+- 2026-10-19：**新增 #25**，发现 BRPC 官方不支持 Windows（vcpkg port 标注 `!windows`）。
+- 2026-10-19：**新增 #26（部署形态）、#27（可裁剪依赖）**，来自 CMake/环境调研。共 **27 条**。

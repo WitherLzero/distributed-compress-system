@@ -153,9 +153,193 @@ MR / Spark 在这个架构里的角色是：**"让集群变忙的原因"**，是
 └─────────────────────────────────────────────────┘
 ```
 
+### 4.4 行业部署形态：**分层，且三层各不相同**
+
+> 证据基础：公开工程博客（Uber / Salesforce / LINE）+ Cloudera 参考架构 + 2026 年生态综述。属**行业观察**，非某公司内部数据。
+
+**先分清两件事**（最容易混淆）：
+
+| | 用途 | 行业普及度 |
+|---|---|---|
+| **Docker 作为开发环境** | 让所有人的编译环境一致 | ⭐⭐⭐ 几乎标准做法 |
+| **容器作为生产部署形态** | 服务跑在容器里 | ⭐⭐ 看在哪一层 |
+
+#### 存储层（HDFS DataNode）——大多仍是**裸金属**
+
+| 原因 | 说明 |
+|---|---|
+| **本地磁盘亲和性** | DataNode 的价值就是"数据在本地盘"，容器化后存储要挂载、I/O 路径变长 |
+| **大容量盘管理** | 一台机器挂 12~24 块大容量盘，硬件形态不适合容器抽象 |
+| **性能敏感** | Cloudera 参考架构明确：DataNode 数据目录**应使用 local storage**，"保持计算贴近存储、不从远端读" |
+
+> Uber 在[容器化 Hadoop NameNode](https://uber.com/en-AU/blog/hadoop-namenode-container) 时明确写道：NameNode 是"性能最敏感的组件"，他们把这一步**排在容器化旅程最后**。**连 NameNode 都要慎重，DataNode 更甚。**
+
+#### 计算层（Spark / MapReduce）——**正在大规模容器化**
+
+| 信号 | 现状 |
+|---|---|
+| **Spark on K8s** | K8s 已有**官方 Spark Operator**；云厂商重心基本在 K8s |
+| **YARN** | 仍撑着大量 **on-prem Hadoop 集群**，"不会在这个十年内消失" |
+| **迁移动因** | 资源争抢、弹性伸缩差、Hadoop 依赖重（如 [LINE 案例](https://techlist.io/en/posts/e01c2b9badf019ddd50b77a6e12d4ef8523fdb98)） |
+
+**现状概括**：
+- **云上 / 新建系统** → 容器化（K8s）为主
+- **传统 on-prem 大数据集群** → YARN + 裸金属仍占大头
+
+> ⚠️ 该集群是 **YARN 还是 K8s**，直接决定 `compress_server` 的真实部署形态 —— 待向导师确认（见 `issues/05` #26）。
+
+#### ⭐ 我们的三组件恰好横跨这三层
+
+| 组件 | 跟随谁 | 行业典型形态 | 原因 |
+|---|---|---|---|
+| **compress_client** | 跟随 **datanode** | **裸金属** | 宿主是存储节点（本身不容器化）；且它是 lib，不能独立部署 |
+| **compress_server** | 跟随**调度器** | **容器**（若 K8s）/ **裸金属+YARN**（若 YARN） | 无状态、可随意 kill、动态启停 |
+| **compress_master** | 固定机器 | 容器或裸金属（都可） | 有状态但状态轻量（注册表），不需本地盘 |
+
+**🔑 一个漂亮的吻合**：`compress_server` 的特性几乎就是容器的定义——
+
+| compress_server 特性 | 容器的对应特性 |
+|---|---|
+| 无状态（重启即全新） | 容器的默认假设 |
+| 随时被拉起 / kill | 弹性伸缩 |
+| 数量动态变化 | 副本数 |
+| 不需本地持久化 | 无状态工作负载 |
+| 启动后自报家门（注册） | 服务发现 |
+
+> 若真实调度器是 K8s，`compress_server` 天然就是一个 `Deployment` 的 Pod。**这不是巧合——K8s 的调度模型与"闲时借算力"的模型本质相同。**
+>
+> 📌 值得写进设计文档：「**server 无状态的设计，使其天然适配容器化调度**」。
+
 ---
 
-## 5. 控制面 / 数据面分离（理解全系统的总钥匙）
+## 5. 本地开发环境（BRPC 的 Windows 阻塞）
+
+### 5.1 🚨 硬事实：BRPC 官方不支持 Windows
+
+**三条独立证据**：
+
+**① vcpkg 的 brpc port 明确标注**（[vcpkg.json](https://github.com/microsoft/vcpkg/blob/master/ports/brpc/vcpkg.json)）：
+```json
+"supports": "!android & !windows"
+```
+
+**② BRPC 官方支持列表**（[getting_started](https://brpc.apache.org/docs/en/getting_started.html)）无 Windows：
+```
+Ubuntu/LinuxMint/WSL · Fedora/CentOS · Linux with self-built deps · MacOS · Docker
+```
+
+**③ 原理层面**：BRPC 的 IO 核心是 `EventDispatcher`，依赖 **epoll**（Linux 专属）的边缘触发模式（见 [IO 文档](https://brpc.apache.org/docs/rpc-in-depth/io/)）。Windows 无 epoll（它是 IOCP 模型，BRPC 未采用）。
+
+**本机实际状况**：
+
+| 项 | 状态 | 对 BRPC |
+|---|---|---|
+| 系统 | Windows 11 家庭中文版（build 26100） | ❌ |
+| 编译器 | MSYS2 UCRT64 / **g++ 16.2.0** | ❌ 官方仅支持 GCC 5.0–11.2（建议 8.2+） |
+| CMake 4.4.2 / Ninja | ✅ | ✅ |
+| LZ4 / LZMA 头文件 | MSYS2 里**已有** ✅ | ✅ |
+| protobuf / gflags / leveldb | ❌ 未装（MSYS2 仓库均有） | ✅ |
+| WSL | ❌ 未装发行版（组件已就位） | —— |
+| Docker | ❌ 未装 | —— |
+| Visual Studio 2022 | 有 | ——（BRPC 不支持 MSVC） |
+
+> 讽刺的是：**除 BRPC 之外的所有依赖，本机都能搞定**。卡点只有 BRPC 本身。
+
+### 5.2 WSL2 与 Docker 的关系（关键认知）
+
+**在 Windows 上，两者不是竞争关系，而是包含关系**：
+
+```
+        Windows 11
+            │
+     ┌──────┴──────┐
+     │    WSL2      │   ← 一个真实的 Linux 内核（微软的轻量虚拟机）
+     └──────┬──────┘
+            │
+     ┌──────┴─────────────────┐
+     │  Docker Desktop 复用     │   ← 底层就是这个 Linux 内核
+     │  它来跑容器              │
+     └────────────────────────┘
+```
+
+> **Docker Desktop 在 Windows 上安装时会自带 WSL2 后端。** 所以"Docker 能解决 Windows 阻塞"的真实原因是：**它底层就是 WSL2**，只是在 Linux 之上又加了一层容器隔离与打包。
+
+### 5.3 两者对比
+
+| 能力 | **WSL2 直接装** | **Docker** |
+|---|---|---|
+| 环境快照/复制 | ❌ 手工 `apt install` 一堆 | ✅ `docker build` 一条命令 |
+| 环境一致性 | ⚠️ 因人而异 | ✅ 同一 image 处处一样 |
+| 多套环境并存 | ⚠️ 只能一套 | ✅ 20.04 / 22.04 / Alpine 同时存在 |
+| 不污染宿主 | ⚠️ 包都留在 Ubuntu 里 | ✅ 容器删掉就干净 |
+| CI/CD 复用 | ⚠️ CI 上要重配 | ✅ 同一 image 直接跑 |
+| **开发体验** | ⭐⭐⭐ VS Code 直连，编辑/编译/调试如本地 | ⭐⭐ 文件要挂载，稍绕 |
+| **调试能力** | ⭐⭐⭐ gdb / 断点原生可用 | ⚠️ 容器内调试需额外配置 |
+| **性能** | ⭐⭐⭐ 文件在 Linux 文件系统内 | ⚠️ 跨文件系统挂载明显下降 |
+
+**BRPC 官方两条路线都支持**：支持列表里有 "WSL"，仓库里也自带 `Dockerfile`（`FROM ubuntu:20.04`，已把构建环境配好）。
+
+### 5.4 ⚠️ 文件系统的性能陷阱
+
+WSL2 与 Windows **双向可见，无需配置**：
+
+```
+方向 ①：Windows 访问 Linux 文件
+        \\wsl.localhost\Ubuntu\home\you\proj
+
+方向 ②：Linux 访问 Windows 文件
+        /mnt/e/Projects/...    （E 盘自动挂载）
+```
+
+**但性能差异巨大**：
+
+| 场景 | 性能 | 原因 |
+|---|---|---|
+| Linux 进程读 **Linux 侧**文件（`~/proj`） | ⭐⭐⭐ 快 | 原生 ext4 |
+| Linux 进程读 **Windows 侧**文件（`/mnt/e/...`） | 🐌 **慢 5~10 倍** | 经 9P 协议转换 |
+| Windows 进程读 **Linux 侧**文件 | 🐌 慢 | 同样转换 |
+
+> 对编译型项目影响显著：编译要读成千上万个头文件，每个都走 9P 转换。
+>
+> **本项目仓库当前在 `E:\Projects\...`（Windows 盘）** → 若在 WSL 编译，需决定代码放哪：
+> | 方案 | 做法 | 编译速度 | 代价 |
+> |---|---|---|---|
+> | A. 留在 E 盘 | `cd /mnt/e/Projects/...` | 🐌 慢 | 零改动 |
+> | B. 移到 WSL | `~/projects/...` | ⭐ 快 | Windows 侧需用 UNC 访问 |
+> | C. 双位置 | E 盘为主 + WSL 内 clone | 快 | 需同步 |
+
+### 5.5 Agent 能否操作 WSL（实测结论）
+
+**能。** `wsl.exe` 是普通 Windows 可执行文件，`ops_bash`（MSYS2 bash）可直接调用：
+
+```bash
+wsl.exe -d Ubuntu -- bash -lc "cd ~/proj && cmake --build build -j16"
+```
+
+| 问题 | 答案 |
+|---|---|
+| 需要 SSH / 端口转发吗 | ❌ **不需要**，本地进程调用 |
+| 需要密码登录吗 | ❌ 默认免密 |
+| 目录共享吗 | ✅ 双向（`\\wsl.localhost\` ↔ `/mnt/`） |
+| agent 能读写 WSL 文件吗 | ✅ 用 `wsl.exe` 进 Linux 侧读写，**无性能损失** |
+
+**⚠️ 已知坑：编码**。`wsl.exe` 自身的管理类输出（`--status`、`--list`）是 **UTF-16LE**，MSYS2 bash 按 UTF-8 解析会乱码。解法（已验证）：
+```bash
+wsl.exe --status 2>&1 | iconv -f UTF-16LE -t UTF-8
+```
+> Linux 侧的**命令输出（编译日志等）是 UTF-8**，不受此影响。
+
+**局限**：单次命令可以（编译、运行、查看输出）；**交互式会话**（如开 `gdb` 交互调试）用 `-c` 方式做不了，需人工开终端。
+
+### 5.6 待定
+
+环境方案尚未确定（WSL2 / Docker / 远程 Linux 主机 / 只出设计不出二进制），已记入 `issues/05` #25、#26。
+
+> 💡 另有一条后续可选项：使用者手头有一台**同局域网 Linux 服务器**和另一台可跑 master 的笔记本 —— 未来可做**跨机联调**（client 在 Windows / server 在 Linux / master 在另一台）。因各机性能不同，需额外评估，暂不纳入 W1。
+
+---
+
+## 6. 控制面 / 数据面分离（理解全系统的总钥匙）
 
 图上的箭头（依据 drawio XML 中 source/target 的精确方向）：
 
@@ -175,7 +359,7 @@ MR / Spark 在这个架构里的角色是：**"让集群变忙的原因"**，是
 
 ---
 
-## 6. 服务发现：为什么 master 地址必须固定
+## 7. 服务发现：为什么 master 地址必须固定
 
 ```
         ┌──────────── 固定地址 ────────────┐
@@ -194,7 +378,7 @@ MR / Spark 在这个架构里的角色是：**"让集群变忙的原因"**，是
 
 ---
 
-## 7. 一次闲时压缩的完整时序
+## 8. 一次闲时压缩的完整时序
 
 把上面所有概念串成一条线：
 
@@ -223,7 +407,7 @@ MR / Spark 在这个架构里的角色是：**"让集群变忙的原因"**，是
 
 ---
 
-## 8. server 的注册与心跳（两个不同动作）
+## 9. server 的注册与心跳（两个不同动作）
 
 | 动作 | 时机 | 内容 | 性质 |
 |---|---|---|---|
@@ -244,7 +428,7 @@ MR / Spark 在这个架构里的角色是：**"让集群变忙的原因"**，是
 
 ---
 
-## 9. master 的行为特征：**reactive，但有决策权**
+## 10. master 的行为特征：**reactive，但有决策权**
 
 按图，master **没有任何出向箭头**给 client 或 server——它是 reactive 的（**从不主动推送**）。但要做精细区分：
 
@@ -287,7 +471,7 @@ MR / Spark 在这个架构里的角色是：**"让集群变忙的原因"**，是
 
 ---
 
-## 10. 选 server 的决策位置（master vs client）
+## 11. 选 server 的决策位置（master vs client）
 
 从小到大三种形态：
 
@@ -338,7 +522,7 @@ client 每 ~30 秒才同步一次，所以**即使 master 做了决策，那也�
 
 ---
 
-## 11. 需要向导师澄清的问题
+## 12. 需要向导师澄清的问题
 
 完整清单见 `.scratch/week1-background-and-design/issues/05-mentor-clarifications.md`。与本文件直接相关的：
 
@@ -359,7 +543,7 @@ client 每 ~30 秒才同步一次，所以**即使 master 做了决策，那也�
 
 ---
 
-## 12. 小结：你真正需要"学"的外部技术
+## 13. 小结：你真正需要"学"的外部技术
 
 | 类别 | 清单 | 需要程度 |
 |---|---|---|
