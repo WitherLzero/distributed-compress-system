@@ -15,7 +15,7 @@
 |---|---|---|
 | 外部系统认知（详细版） | `docs/research/external-systems.md` | ✅ 已完成 |
 | 项目领域上下文（精炼版） | `CONTEXT.md` | ✅ 已完成 |
-| 依赖库调研（BRPC / CMake / LZ4 / LZMA） | `docs/research/dependency-libraries.md` | 🔄 **A（BRPC）+ B（CMake）完成**；C（压缩库）待补 |
+| 依赖库调研（BRPC / CMake / LZ4 / LZMA） | `docs/research/dependency-libraries.md` | ✅ **A/B/C 全部完成**（API 代码待 W4/W5） |
 | 设计文档初稿（≥50%） | `docs/design/` 或仓库根（套用 `meeting/设计文档模版.md`） | ⬜ 未开始 |
 | 架构图重绘 | `docs/compress-system.drawio`（规范化布局） | ⬜ 未开始 |
 | 向导师澄清的问题清单 | `issues/05-mentor-clarifications.md` | 🔄 持续追加（已 27 条） |
@@ -57,7 +57,7 @@
 | # | 标题 | 状态 |
 |---|---|---|
 | 01 | 外部系统认知调研 | ✅ 完成 |
-| 02 | 依赖库调研（BRPC / CMake / 压缩库） | 🔄 A、B 完成；C 待补 |
+| 02 | 依赖库调研（BRPC / CMake / 压缩库） | ✅ 完成 |
 | 03 | 设计文档初稿 | ⬜ 待开始 |
 | 04 | 架构图重绘 | ⬜ 待开始 |
 | 05 | 待向导师澄清的问题 | 🔄 持续追加 |

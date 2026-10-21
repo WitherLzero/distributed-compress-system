@@ -1,6 +1,6 @@
 # 02 — 依赖库调研（BRPC / CMake / 压缩库）
 
-- **Status**: in-progress（A、B 部分已完成，C 待补）
+- **Status**: **completed**（A/B/C 三部分均完成；API 调用代码按约定留到 W4/W5）
 - **Type**: research
 - **Blocked by**: —
 
@@ -8,10 +8,21 @@
 
 | 章节 | 状态 | 落点 |
 |---|---|---|
-| **A. BRPC + Protobuf** | ✅ **第一版完成** | `docs/research/dependency-libraries.md` §A |
+| **A. BRPC + Protobuf** | ✅ **完成** | `docs/research/dependency-libraries.md` §A |
 | **B. CMake（+ Blade 对比）** | ✅ **完成** | 同上 §B |
-| C. 压缩库（LZ4 / LZMA） | ⬜ 未开始 | 同上（待补） |
+| **C. 压缩库（LZ4 / LZMA）** | ✅ **完成**（API 代码待 W4/W5） | 同上 §C |
 | D. 概念补充 | ✅ 已覆盖 | `docs/research/external-systems.md` |
+
+### C 部分的主要结论（已归档）
+
+- 🔑 **LZ4 窗口固定 64 KB**（格式写死，不可调）→ **分片必须 ≥ 64 KB**（建议 256 KB~4 MB）
+- 🔑 **LZMA 字典 = 回溯窗口，存的是【原始数据】不是压缩后数据**
+- 🔑 两条口诀：**压缩内存 ≈ 字典 × 10~12**；**解压内存 ≈ 字典 + 1 MiB**
+- 🔑 LZ4 没有字典表 —— 因为窗口写死，这就是它快、也是它压缩率低的原因
+- ⚖️ **深压建议 `-6`**（94/9 MiB）而非 `-9`（674/65 MiB）：**压缩只做一次、解压做 N 次**，热路径上的解压内存更要紧
+- ⚠️ **不可压缩数据会膨胀 0.4%** → 元信息**必须有算法标记字段**（0=未压/1=LZ4/2=LZMA）
+- 💡 文本日志压 10+ 倍与通用基准 2-3 倍不矛盾 —— 是数据性质不同（长距离重复 + 高可预测性）
+- 📌 调研深度约定：**权衡为主，不做算法实现**；Zstd 仅列入权衡表作参照，不作正式方案
 
 ### B 部分的主要结论（已归档）
 
@@ -97,3 +108,7 @@
   要点：CMake 是生成器非构建工具（不必学 Makefile）；target-based 三条命令；PRIVATE/PUBLIC 判断法则；本项目 5 个 target；Blade 定位对比与不采用的 4 条理由。
   **附带发现（阻塞项）**：**BRPC 官方不支持 Windows**（vcpkg port 标注 `!windows`，依赖 epoll）→ 编译环境分析写入 `docs/research/external-systems.md` §5；同时补充了行业部署形态（§4.4）。
   下一步：C（压缩库 LZ4 / LZMA）。
+- 2026-10-19：**C 部分（压缩库）完成** → `docs/research/dependency-libraries.md` §C（C.0–C.7）。
+  深度约定与用户确认：**只需权衡 + 少数必要原理，不做算法实现**；**API 代码留到 W4/W5**；**Zstd 只进权衡表，不作正式方案**。
+  关键产出：LZ4 64KB 窗口约束分片；LZMA 字典含义澄清（原始数据窗口）+ 内存口诀；深压选 `-6` 的理由；不可压缩数据膨胀 0.4% → 算法标记字段。
+  **issue 02 至此完成。**
