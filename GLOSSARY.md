@@ -1,4 +1,4 @@
-# CONTEXT.md
+# GLOSSARY.md
 
 > 本项目的领域上下文。**读代码或改代码之前先读这份文件。**
 > 详细论证见 `docs/research/external-systems.md`；设计决策见 `docs/adr/`。

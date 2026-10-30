@@ -12,7 +12,7 @@
 | 文件 | 内容 |
 |---|---|
 | `docs/research/external-systems.md` | 详细版：四名词定性、三种对接形态、C++ lib 无法嵌入 Java datanode 的推论、生产/本地部署形态、控制面数据面分离、完整时序、注册与心跳、master 行为特征、选 server 的决策位置 |
-| `CONTEXT.md` | 精炼版：系统边界、三组件、外部系统表、控制面/数据面示意、术语表、关键约束 |
+| `GLOSSARY.md` | 精炼版：系统边界、三组件、外部系统表、控制面/数据面示意、术语表、关键约束 |
 | `docs/adr/0001-local-mock-external-clusters.md` | 决策：本地以 mock 替代真实外部集群（Status: Proposed） |
 
 ## 关键结论

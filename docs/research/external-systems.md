@@ -1,6 +1,6 @@
 # 外部系统认知：存储集群、离线集群与调度器
 
-> W1 调研文档（部分）。**精炼版见仓库根 `CONTEXT.md`**；本文件是带论证的详细版。
+> W1 调研文档（部分）。**精炼版见仓库根 `GLOSSARY.md`**；本文件是带论证的详细版。
 > 唯一权威依据：导师手绘架构图 `docs/compress-system.drawio`（2026-10-18 第1课后由导师提供）。
 
 ## 0. 一句话定位
@@ -559,7 +559,7 @@ client 每 ~30 秒才同步一次，所以**即使 master 做了决策，那也�
 
 - 导师手绘架构图：`docs/compress-system.drawio`（唯一权威依据）
 - 第 1 课会议记录：`meeting/见识星球 昕祺 软件研发实习第1课.md`
-- 精炼版上下文：`CONTEXT.md`
+- 精炼版上下文：`GLOSSARY.md`
 - mock 决策：`docs/adr/0001-local-mock-external-clusters.md`
 - [Hadoop libhdfs（C API）](https://hadoop.apache.org/docs/stable/hadoop-project-dist/hadoop-hdfs/LibHdfs.html)
 - [YARN ResourceManager REST API](https://hadoop.apache.org/docs/stable/hadoop-yarn/hadoop-yarn-site/ResourceManagerRest.html)

@@ -2,7 +2,7 @@
 
 > W1 交付物——《技能调研文档》。本文件**持续增补**，当前已完成 **A（BRPC）、B（CMake）、C（压缩库）** 三部分。
 > issue：`.scratch/week1-background-and-design/issues/02-dependency-libraries.md`
-> 精炼版上下文见 `CONTEXT.md`；外部系统见 `docs/research/external-systems.md`。
+> 精炼版上下文见 `GLOSSARY.md`；外部系统见 `docs/research/external-systems.md`。
 
 ## 状态
 

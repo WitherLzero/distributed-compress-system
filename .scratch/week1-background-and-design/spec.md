@@ -14,7 +14,7 @@
 | 交付物 | 落点 | 状态 |
 |---|---|---|
 | 外部系统认知（详细版） | `docs/research/external-systems.md` | ✅ 已完成 |
-| 项目领域上下文（精炼版） | `CONTEXT.md` | ✅ 已完成 |
+| 项目领域上下文（精炼版） | `GLOSSARY.md` | ✅ 已完成 |
 | 依赖库调研（BRPC / CMake / LZ4 / LZMA） | `docs/research/dependency-libraries.md` | ✅ **A/B/C 全部完成**（API 代码待 W4/W5） |
 | 设计文档初稿（≥50%） | `docs/design/` 或仓库根（套用 `meeting/设计文档模版.md`） | ⬜ 未开始 |
 | 架构图重绘 | `docs/compress-system.drawio`（规范化布局） | ⬜ 未开始 |
@@ -35,7 +35,7 @@
 
 ## Key constraints
 
-- **系统边界不得滑移**：HDFS、MR/Spark、调度器都是既有系统，本项目只做 compress 三组件（见 `CONTEXT.md`）。
+- **系统边界不得滑移**：HDFS、MR/Spark、调度器都是既有系统，本项目只做 compress 三组件（见 `GLOSSARY.md`）。
 - `meeting/` 与 `local/` 为本地目录，**不追踪**（见 `.gitignore`）。
 - issue / 目录命名一律**英文小写 kebab-case**（见 `.scratch/README.md`）。
 - commit 遵循 Conventional Commits，类型用英文。

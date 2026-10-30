@@ -14,8 +14,8 @@
 
 | 章节 | W1 目标 | 说明 |
 |---|---|---|
-| 需求背景 | ✅ 完整 | 已有素材：`CONTEXT.md`、`docs/research/external-systems.md` |
-| 名词术语 | ✅ 完整 | 可从 `CONTEXT.md` 术语表提炼 |
+| 需求背景 | ✅ 完整 | 已有素材：`GLOSSARY.md`、`docs/research/external-systems.md` |
+| 名词术语 | ✅ 完整 | 可从 `GLOSSARY.md` 术语表提炼 |
 | **功能模块详细说明** | 🔄 主体 | 三组件 + mock 层；含功能概述/输入输出/流程设计/可靠性设计 |
 | 流程详细说明 | 🔄 主体 | 用 `docs/research/external-systems.md` §7 的完整时序 |
 | 异常处理 | ⬜ 部分 | 判死、反压、重试退避、压缩失败回滚 |
