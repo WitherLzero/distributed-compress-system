@@ -1,8 +1,8 @@
 # ADR-0001: 本地以 mock 替代真实外部集群
 
-- **Status**: Proposed（待与导师确认）
+- **Status**: Accepted（第 2 课导师确认 mock 粒度与 datanode 形态）
 - **Date**: 2026-10-19
-- **Deciders**: 林昕祺（学员）、shanks（导师，待确认）
+- **Deciders**: 林昕祺（学员）、shanks（导师）
 
 ## Context
 
@@ -52,7 +52,7 @@
 - mock 与真实集群存在行为差异（如真实网络的抖动、跨机房延迟），**本地跑通不等于生产可用**——这一点必须写进设计文档的"可靠性设计"作为已知局限。
 - 多了一层需要维护的测试代码。
 
-## 待确认
+## 待确认（已于第 2 课闭环，2026-10-27）
 
-- [ ] 导师那套原系统的 datanode 是否为 **C++ 自研**？（drawio 上的"（HDFS）"是类比说明，而非字面意义的 Apache Hadoop）这决定 mock_datanode 是否忠实复现了真实形态。
-- [ ] mock 的粒度是否合适——导师是否期望更粗/更细的替代方案。
+- [x] 导师那套原系统的 datanode 是否为 **C++ 自研**？—— **是**。导师确认 client 以动态库/静态库**连编进 datanode**（Java DataNode 无法嵌入 C++ lib），"（HDFS）"为类比说明。
+- [x] mock 的粒度是否合适——**认可**。假 datanode 只需"扫目录 + 投喂数据"验证 client 动态库形态；调度模拟**用 Shell 脚本**（定时拉起/杀 server），不写 scheduler（issues/05 #6、#16）。

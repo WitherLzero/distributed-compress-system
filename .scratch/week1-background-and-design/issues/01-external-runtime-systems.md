@@ -24,9 +24,10 @@
 
 ## 遗留
 
-- 上述第 2 条的**推断**需向导师确认 → 见 `05-mentor-clarifications.md` #19。
-- xtime 来源、跨集群网络、scheduler 与 master 的关系等 → 见 `05`。
+- ~~上述第 2 条的**推断**需向导师确认~~ → ✅ 第 2 课（2026-10-27）确认：datanode 为 C++ 自研，client 动态库/静态库连编其中（issues/05 #7）。
+- ~~xtime 来源~~ → ✅ 文件系统自带 atime（#1）。~~scheduler 与 master 的关系~~ → ✅ master 不申请拉起；本项目用脚本模拟调度（#6）。跨集群网络带宽背景 → ✅ 高盘位时代带宽成瓶颈（#8）。
 
 ## Comments
 
 - 2026-10-19：完成。方法：逐元素解析 `docs/compress-system.drawio` 的 XML（取 source/target 精确方向），结合第 1 课会议记录；并用 web 检索核实 libhdfs 的 JNI 性质与 YARN REST API 的存在。
+- 2026-10-30：第 2 课闭环全部遗留项。补充结论：生产选 server 用 **random**（master 总表 + client 自选 + 队列满退避），负载上报（队列/CPU/MEM）仅为策略演进保留；master 生产为 Raft 3 副本选主。
