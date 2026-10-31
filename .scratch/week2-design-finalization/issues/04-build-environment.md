@@ -1,6 +1,6 @@
 # 04 — 编译环境搭建（可延期至 W3）
 
-- **Status**: ready-for-agent
+- **Status**: completed（2026-11-01；验收两条均达成，实测记录见 `docs/research/wsl-build-environment.md` §5）
 - **优先级**: 本周最末尾；时间不够顺延到 W3（大纲 W3 本就含"打通编译流程"，导师第 2 课亦提"剩余时间先编出二进制"）。
 
 ## 内容

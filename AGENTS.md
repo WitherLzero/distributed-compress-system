@@ -13,3 +13,7 @@ Default vocabulary: the five canonical roles (`needs-triage`, `needs-info`, `rea
 ### Domain docs
 
 Single-context: `GLOSSARY.md` + `docs/adr/` at the repo root (created lazily by `/domain-modeling`). See `docs/agents/domain.md`.
+
+### Dev workflow
+
+Windows + WSL2 双副本协作约定（git 拓扑、两侧分工、git 纪律、已知坑）：`docs/agents/dev-workflow.md`。环境搭建实操另见 `docs/research/wsl-build-environment.md`。
