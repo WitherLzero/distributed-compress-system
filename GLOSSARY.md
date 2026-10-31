@@ -25,7 +25,7 @@
 | 组件 | 部署形态 | 生命周期 | 职责 |
 |---|---|---|---|
 | **compress_client** | **动态库**，链入 datanode 进程 | 随 datanode 存活 | 扫描冷数据、发压缩请求、收回结果并回写、访问时解压 |
-| **compress_master** | 独立进程，**固定机器** | 常驻，**不能随意重启** | server 注册表维护、心跳判死、负载视图/排序 |
+| **compress_master** | 独立进程，**固定机器** | 常驻，**不能随意重启** | server 注册表维护、心跳判死、健康实例全量下发（**不排序**——选点为 client 侧 random） |
 | **compress_server** | 独立进程，跑在离线集群 | **随时被拉起/杀掉**，无状态 | 执行压缩、心跳上报自身负载 |
 
 ## 外部系统（都是"环境"，不是"工具"）
@@ -66,13 +66,14 @@
 | **xtime** | 数据的"最后访问时间"，用于判定压缩触发条件（**第2课已澄清**：即文件系统自带 atime，block 元数据含 block id + xtime，client 只读不记） |
 | **浅压缩** | 7 天无访问触发，LZ4，快（~1 GB/s），压缩率较低 |
 | **深压缩** | 14 天无访问触发，LZMA，极慢（~1 MB/s），压缩率高 |
-| **注册** | server 启动时向 master 声明"我是谁、我在哪"（一次性） |
-| **心跳** | server 周期上报"我还活着 + 当前负载"（持续） |
-| **判死** | master 依"最后一次心跳距今多久"推断 server 已死亡 |
+| **注册** | server 启动后首次心跳即完成注册（注册与心跳**合并**，注册表不持久化） |
+| **心跳** | server 周期上报"我还活着 + 当前负载"（持续，5s 周期） |
+| **判死** | master 判定 server 已死亡：周期扫描（1~2s）最后心跳时间戳，超 20s（×4 周期）剔除；查询时过滤兜底 |
 | **反压（backpressure）** | server 队列过深时拒绝/延迟，促使 client 退避并换 server 重试 |
 | **退避（backoff）** | client 遇忙后的等待再重试策略 |
 | **附件（attachment）** | BRPC 传输大 payload 的机制；压缩数据走附件，控制消息走 Protobuf |
-| **元信息** | 压缩后必须记录的信息（原始长度、压缩后长度、压缩单位等），否则无法解压 |
+| **元信息** | 压缩后必须记录的信息（原始长度、压缩后长度、压缩单位等），否则无法解压；与数据同址存为文件头（4KB 对齐区 + 逐块条目） |
+| **C ABI 边界** | compress_client 对宿主只暴露 C 函数接口（`compress_client.h`，6 函数）；C++ 异常/对象/指针不得越过该边界 |
 
 ## 关键设计约束
 
@@ -86,6 +87,10 @@
 |---|---|
 | 外部系统详解、部署形态、完整时序 | `docs/research/external-systems.md` |
 | 本地 mock 决策 | `docs/adr/0001-local-mock-external-clusters.md` |
+| 控制面不做 HA | `docs/adr/0002-no-control-plane-ha.md` |
+| client C ABI 接口决策 | `docs/adr/0003-c-abi-client-interface.md` |
+| 接口 proto3 选型 | `docs/adr/0004-proto3-syntax.md` |
 | W1 任务与验收 | `.scratch/week1-background-and-design/spec.md` |
+| W2 任务与验收 | `.scratch/week2-design-finalization/spec.md` |
 | 待向导师澄清的问题 | `.scratch/week1-background-and-design/issues/05-mentor-clarifications.md` |
 | 工程约定（issue tracker / domain docs） | `docs/agents/` |

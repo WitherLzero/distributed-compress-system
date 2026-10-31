@@ -1,6 +1,6 @@
 # 01 — 设计文档内容确认与最终决策
 
-- **Status**: ready-for-agent
+- **Status**: completed（2026-10-31：全部修订落稿；验收项全部通过；C 接口与 proto3 选型另行沉淀为 ADR-0003/0004）
 - **目标**: 逐节核对 `docs/design/design-document.md` v0.1，把第 2 课导师答复与本方自决结论落进正文，销号全部【待确认】标记。
 
 ## 待落地内容（按章节）
@@ -26,9 +26,15 @@
 
 ## Acceptance
 
-- 全文 grep `【待确认` 结果为 0（或仅剩显式标注"待第 3 课反馈"的条目）。
-- 第 7/8 章完成，满足 spec.md 精度要求。
-- 逐节自查与 ADR-0001/0002、GLOSSARY 无矛盾。
+- 全文 grep `【待确认` 结果为 0（或仅剩显式标注"待第 3 课反馈"的条目）。✅ 2026-10-31 grep=0
+- 第 7/8 章完成，满足 spec.md 精度要求。✅ v0.2 落稿
+- 逐节自查与 ADR-0001/0002、GLOSSARY 无矛盾。✅ GLOSSARY 同步修订（master 不排序/注册合并/判死参数/C ABI 边界词条/索引补 0002-0004）
+
+## Comment（2026-10-31 收尾）
+
+- 探索产物：`docs/design/client-api-alternatives.md`（design-it-twice 三方案）、`docs/adr/0003-c-abi-client-interface.md`（C ABI 接口）、`docs/adr/0004-proto3-syntax.md`（proto 语法选型）。
+- 正文口径执行：1–8 章无出处指针/元叙述；依据集中于附录 A/B。
+- §6.2 扩为 C 接口设计（6 函数 + 返回码 + 边界纪律）；§7.2 类表按五类→文件映射刷新（新增 ClientCore，Decompressor 并入 read_path）。
 
 ## Out of scope
 
