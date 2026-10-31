@@ -1220,7 +1220,7 @@ datanode 本身已"很繁忙"（导师原话），**再加 180 MiB 需谨慎**�
 - [vcpkg brpc port](https://github.com/microsoft/vcpkg/blob/master/ports/brpc/vcpkg.json) —— `"supports": "!windows"`
 - [LZ4 Block Format 规范](https://github.com/lz4/lz4/blob/dev/doc/lz4_Block_format.md) —— 64KB 窗口、minmatch=4、不可压缩数据膨胀 0.4%
 - [xz/LZMA 预设与内存表](https://stackoverflow.com/questions/68593651/xz-java-library-is-there-any-way-to-use-extreme-presets) —— 各 preset 的字典/压缩/解压内存
-- 导师架构图：`docs/compress-system.drawio`
+- 导师架构图：`docs/diagrams/compress-system.drawio`
 
 ## Comments
 

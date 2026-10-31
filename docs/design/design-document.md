@@ -10,7 +10,7 @@
 | 状态 | **修订中**——正文待确认项已按第 2 课答复销号；第 7、8 章本轮补齐 |
 | 编写日期 | 2026-10-19（v0.1）；2026-10-31 依第 2 课答复修订 |
 | 编写人 | 林昕祺 |
-| 依据 | `meeting/设计文档模版.md`；导师第 1、2 课讲解；`docs/compress-system.drawio`；`docs/research/` |
+| 依据 | `meeting/设计文档模版.md`；导师第 1、2 课讲解；`docs/diagrams/compress-system.drawio`；`docs/research/` |
 | 课程阶段 | 第 2 周（设计定稿） |
 
 ### 章节完成情况
@@ -57,6 +57,10 @@
 3. 压缩结果回写存储集群，替换原始数据。
 
 选择离线计算集群作为算力来源，是因为此类集群（MapReduce / Spark 等批处理集群）存在明显的**忙时与闲时**：忙时作业排满，闲时可释放大量 CPU 与内存资源。利用闲时算力执行压缩，可在不新增硬件投入的前提下降低存储成本。
+
+系统整体拓扑见图 1。
+
+![图 1 系统架构](../diagrams/compress-system.drawio.png)
 
 ### 1.4 业务流程中各环节及其对系统的需求
 
@@ -354,28 +358,9 @@ compress_client 所在的 datanode 节点同时承载前台数据读写业务，
 
 ### 4.2 压缩主流程
 
-```
-数据节点                                      离线计算集群
-┌──────────────┐                            ┌────────────────┐
-│ compress_    │                            │ compress_server│
-│ client       │                            │                │
-└──────┬───────┘                            └───────┬────────┘
-       │                                            │
-       │ 1. 扫描，识别冷数据                          │
-       │                                            │
-       │ 2. 查询可用实例                               │
-       ├──────────────────► compress_master          │
-       │ ◄────────────────── 返回实例列表              │
-       │                                            │
-       │ 3. 发送压缩请求（数据经附件传输）              │
-       ├───────────────────────────────────────────►│
-       │                                            │ 4. 入队、压缩
-       │ 5. 返回压缩结果（数据经附件传输）              │
-       │ ◄───────────────────────────────────────────┤
-       │                                            │
-       │ 6. 回写压缩数据并记录元信息                    │
-       │                                            │
-```
+压缩主流程见图 2。
+
+![图 2 压缩主流程](../diagrams/flow-compress.drawio.png)
 
 | 步骤 | 说明 |
 |---|---|
@@ -406,6 +391,10 @@ compress_client 所在的 datanode 节点同时承载前台数据读写业务，
 | 1 | 调度系统 | 终止 `compress_server` 实例 |
 | 2 | `compress_master` | 心跳中断超过阈值，判定实例失效，从可用列表移除 |
 | 3 | `compress_client` | 若对已失效实例的在途请求超时，执行退避后改投其他实例 |
+
+实例失效判定流程见图 3。
+
+![图 3 实例失效判定流程](../diagrams/flow-death.drawio.png)
 
 ### 4.5 负载反馈流程
 
@@ -832,7 +821,9 @@ public:
 
 | 文档 | 用途 |
 |---|---|
-| `docs/compress-system.drawio` | 架构图（导师提供） |
+| `docs/diagrams/compress-system.drawio` | 架构图（导师提供） |
+| `docs/diagrams/flow-compress.drawio` | 压缩主流程图（4.2） |
+| `docs/diagrams/flow-death.drawio` | 实例失效判定流程图（4.4） |
 | `docs/research/external-systems.md` | 外部系统与部署形态调研 |
 | `docs/research/dependency-libraries.md` | RPC 框架、构建工具、压缩算法调研 |
 | `docs/adr/0001-local-mock-external-clusters.md` | 本地 mock 方案决策 |

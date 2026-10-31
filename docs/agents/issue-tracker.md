@@ -15,7 +15,7 @@ Issues and specs for this repo live as markdown files in `.scratch/`.
 ## Where other early-stage artifacts live
 
 - Design docs: repo root, following `设计文档模版.md`
-- Architecture diagrams: `compress-system.drawio` (draw.io)
+- Architecture diagrams: `docs/diagrams/` (draw.io source + exported PNG)
 - Course notes: `meeting/`
 
 ## When a skill says "publish to the issue tracker"
