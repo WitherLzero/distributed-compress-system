@@ -94,4 +94,4 @@ cmake --build build -j"$(nproc)"
 - [x] proto 生成 + `${CMAKE_CURRENT_BINARY_DIR}` include（B.5 坑 #3）已验证
 - [x] LZ4/LZMA 系统包版本已确认可用（`liblz4-dev` / `liblzma-dev`）
 - [x] agent 经 `wsl.exe -d Ubuntu-22.04 -- bash -lc "..."` 可免密执行编译（external-systems.md §5.5）；已配 `rynnli` NOPASSWD sudo
-- [ ] 仓库已建 GitHub private remote，WSL 侧克隆 `~/projects/distributed-compress-system`
+- [x] 仓库已建 GitHub private remote（https://github.com/WitherLzero/distributed-compress-system），WSL 侧克隆 `~/projects/distributed-compress-system`（2026-11-01）
