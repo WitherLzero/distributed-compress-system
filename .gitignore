@@ -8,3 +8,17 @@ local/
 
 # Transient lock files left by the editing tooling. Never part of the repo.
 .dsh-ops-update-*.lock
+
+# Portable tool binaries (typst/pandoc): re-download from upstream releases.
+tools/typst/
+tools/pandoc/
+
+# Harness scaffolding
+.omo/
+
+# PDF build artifacts and local-only build tooling (md references local image
+# paths; PDF is rendered locally just for sending to mentor).
+docs/design/design-document.pdf
+docs/design/typst/
+scripts/
+tools/

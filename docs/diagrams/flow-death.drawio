@@ -1,6 +1,6 @@
 <mxfile host="Electron">
   <diagram id="RzfwMQIFzO-JEkg89HcD" name="第 1 页">
-    <mxGraphModel dx="798" dy="563" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="460" pageHeight="760" math="0" shadow="0" adaptiveColors="auto">
+    <mxGraphModel dx="798" dy="563" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="460" pageHeight="545" math="0" shadow="0" adaptiveColors="auto">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
@@ -8,19 +8,19 @@
           <mxGeometry height="50" width="320" x="60" y="60" as="geometry" />
         </mxCell>
         <mxCell id="k2" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#cdeb8b;strokeColor=#36393d;" value="该实例心跳中断" vertex="1">
-          <mxGeometry height="40" width="320" x="60" y="160" as="geometry" />
+          <mxGeometry height="40" width="320" x="60" y="130" as="geometry" />
         </mxCell>
         <mxCell id="k3" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#cdeb8b;strokeColor=#36393d;" value="DeathScanner 周期扫描（1~2s）：最后心跳距今 &gt; 20s？" vertex="1">
-          <mxGeometry height="60" width="320" x="60" y="250" as="geometry" />
+          <mxGeometry height="60" width="320" x="60" y="190" as="geometry" />
         </mxCell>
         <mxCell id="k4" parent="1" style="rhombus;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" value="超阈值？" vertex="1">
-          <mxGeometry height="70" width="140" x="150" y="360" as="geometry" />
+          <mxGeometry height="70" width="140" x="150" y="270" as="geometry" />
         </mxCell>
         <mxCell id="k5" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#cdeb8b;strokeColor=#36393d;" value="从注册表剔除（查询不再返回该实例）" vertex="1">
-          <mxGeometry height="50" width="320" x="60" y="490" as="geometry" />
+          <mxGeometry height="50" width="320" x="60" y="360" as="geometry" />
         </mxCell>
         <mxCell id="k6" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" value="client：在途请求超时 → 退避 → random 改投其他实例&lt;div&gt;（消化完毕，无人工干预）&lt;/div&gt;" vertex="1">
-          <mxGeometry height="70" width="320" x="60" y="590" as="geometry" />
+          <mxGeometry height="70" width="320" x="60" y="430" as="geometry" />
         </mxCell>
         <mxCell id="fk12" edge="1" parent="1" source="k1" style="endArrow=classic;html=1;rounded=1;edgeStyle=orthogonalEdgeStyle;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="k2">
           <mxGeometry relative="1" as="geometry" />
@@ -38,8 +38,8 @@
           <mxGeometry relative="1" x="-0.5918" y="-15" as="geometry">
             <mxPoint as="offset" />
             <Array as="points">
-              <mxPoint x="40" y="395" />
-              <mxPoint x="40" y="280" />
+              <mxPoint x="40" y="305" />
+              <mxPoint x="40" y="220" />
             </Array>
           </mxGeometry>
         </mxCell>

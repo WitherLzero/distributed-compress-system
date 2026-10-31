@@ -15,8 +15,22 @@
 |---|---|---|
 | 设计文档定稿（8 章完整、无待确认标记） | `docs/design/design-document.md` | ✅ v0.2 完成（issue01 关账；正文无待确认标记，7/8 章落稿） |
 | 第 2 课新增决策项落文档 | 流控、深压解压位置、mock 形态、分块大小、监控说明 | ✅ 5 条定稿（见 issues/02；流控=§3.1.5、深压=本地为主、监控不加小节） |
-| 架构图重绘（含新增流程图） | `docs/compress-system.drawio` | ⬜ 未开始（W1 顺延） |
+| 架构图重绘（含新增流程图） | `docs/diagrams/`（架构图 + 压缩主流程图 + 失效判定图，正文 §1.3/4.2/4.4 引用） | ✅ 完成（issue03；正文图 1/2/3 已插图） |
 | 编译环境（WSL2 + BRPC） | 本地环境 | ⬜ 放本周最末尾，**可顺延到 W3**（大纲 W3 本就含"打通编译流程"） |
+
+## 参考文档速查（原设计文档附录 B，定稿时移入本处）
+
+| 文档 | 用途 |
+|---|---|
+| `docs/diagrams/compress-system.drawio` | 架构图（导师提供） |
+| `docs/diagrams/flow-compress.drawio` | 压缩主流程图（4.2） |
+| `docs/diagrams/flow-death.drawio` | 实例失效判定流程图（4.4） |
+| `docs/research/external-systems.md` | 外部系统与部署形态调研 |
+| `docs/research/dependency-libraries.md` | RPC 框架、构建工具、压缩算法调研 |
+| `docs/adr/0001-local-mock-external-clusters.md` | 本地 mock 方案决策 |
+| `docs/adr/0003-c-abi-client-interface.md` | client 对外 C ABI 接口决策（选型过程见 `docs/design/client-api-alternatives.md`） |
+| `docs/adr/0004-proto3-syntax.md` | 接口描述 proto3 语法选型决策 |
+| `.scratch/week1-background-and-design/issues/05-mentor-clarifications.md` | 待确认事项完整清单（原附录 A 的汇总表以此为准） |
 
 ## Acceptance
 
@@ -48,5 +62,5 @@
 |---|---|---|
 | 01 | 设计文档内容确认与最终决策 | ✅ completed（commit 3a3f10c） |
 | 02 | 第 2 课新增决策项（5 条） | ✅ completed |
-| 03 | 架构图重绘 | ⬜ 待开始 |
+| 03 | 架构图重绘 | ✅ completed（commit 26b5acf；三图定稿并入 docs/diagrams/） |
 | 04 | 编译环境搭建（可延期至 W3） | ⬜ 待开始（本周末尾） |
