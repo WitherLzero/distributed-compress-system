@@ -50,3 +50,9 @@
 | WSL 虚拟盘（`.vhdx`）只增不减 | 偶尔 `Optimize-VHD` 压缩 |
 | agent 从 git-bash 调 `wsl.exe` 传 `/mnt/...` 路径会被 MSYS 转成 Windows 路径（脚本找不到） | 命令前加 `MSYS_NO_PATHCONV=1` |
 | git-bash 里内嵌 PowerShell 命令时 `$变量` 被 bash 展开、反斜杠路径被吃 | 写成 `.ps1` 文件用 `-File` 调，路径用正斜杠 |
+
+## 6. 工具速查
+
+| 工具 | 位置 / 用法 |
+|---|---|
+| draw.io 桌面版（含导出 CLI） | `D:\drawio\draw.io\draw.io.exe`（自定义安装路径，不在 PATH）。PNG 导出：`draw.io.exe --disable-gpu -x -f png -e -b 10 -o out.png in.drawio`；Electron 单实例，连续导出需逐条串行执行；DSH 受限沙箱下 Electron IPC 会被拦（报 0x5），需 full-access 模式 |

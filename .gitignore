@@ -22,3 +22,6 @@ docs/design/design-document.pdf
 docs/design/typst/
 scripts/
 tools/
+
+# draw.io desktop backup files
+.$*.bkp

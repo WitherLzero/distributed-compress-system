@@ -1,42 +1,46 @@
-<mxGraphModel adaptiveColors="auto">
-  <root>
-    <mxCell id="0" />
-    <mxCell id="1" parent="0" />
-    <mxCell id="title" value="数据冷却沉降：访问频率随时间下降，逐级触发压缩" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=16;fontStyle=1;" vertex="1" parent="1">
-      <mxGeometry x="200" y="20" width="600" height="40" as="geometry" />
-    </mxCell>
-    <mxCell id="t0" value="数据写入&lt;div&gt;热数据，频繁访问&lt;/div&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" vertex="1" parent="1">
-      <mxGeometry x="40" y="100" width="170" height="70" as="geometry" />
-    </mxCell>
-    <mxCell id="t1" value="访问频率随时间下降&lt;div&gt;数据逐步冷却&lt;/div&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
-      <mxGeometry x="270" y="100" width="170" height="70" as="geometry" />
-    </mxCell>
-    <mxCell id="t2" value="短期未访问（≥ 7 天）&lt;div&gt;触发浅压缩：LZ4&lt;/div&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
-      <mxGeometry x="500" y="100" width="190" height="70" as="geometry" />
-    </mxCell>
-    <mxCell id="t3" value="长期未访问（≥ 14 天）&lt;div&gt;触发深压缩：LZMA&lt;/div&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
-      <mxGeometry x="750" y="100" width="210" height="70" as="geometry" />
-    </mxCell>
-    <mxCell id="e01" style="endArrow=classic;html=1;rounded=1;edgeStyle=orthogonalEdgeStyle;" edge="1" parent="1" source="t0" target="t1">
-      <mxGeometry relative="1" as="geometry" />
-    </mxCell>
-    <mxCell id="e01Label" value="时间流逝" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=11;" vertex="1" parent="1">
-      <mxGeometry x="215" y="115" width="50" height="20" as="geometry" />
-    </mxCell>
-    <mxCell id="e12" style="endArrow=classic;html=1;rounded=1;edgeStyle=orthogonalEdgeStyle;" edge="1" parent="1" source="t1" target="t2">
-      <mxGeometry relative="1" as="geometry" />
-    </mxCell>
-    <mxCell id="e12Label" value="达到浅压缩阈值" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=11;" vertex="1" parent="1">
-      <mxGeometry x="442" y="115" width="76" height="20" as="geometry" />
-    </mxCell>
-    <mxCell id="e23" style="endArrow=classic;html=1;rounded=1;edgeStyle=orthogonalEdgeStyle;" edge="1" parent="1" source="t2" target="t3">
-      <mxGeometry relative="1" as="geometry" />
-    </mxCell>
-    <mxCell id="e23Label" value="达到深压缩阈值" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=11;" vertex="1" parent="1">
-      <mxGeometry x="692" y="115" width="76" height="20" as="geometry" />
-    </mxCell>
-    <mxCell id="note" value="判定依据：扫描 data node 进程内存中的 block 元信息（block id + atime），绝不遍历文件系统；阈值经配置化，具体数值待 issue 02-B 定稿。" style="rounded=0;whiteSpace=wrap;html=1;fillColor=none;strokeColor=default;dashed=1;align=left;verticalAlign=middle;fontSize=12;" vertex="1" parent="1">
-      <mxGeometry x="40" y="220" width="920" height="50" as="geometry" />
-    </mxCell>
-  </root>
-</mxGraphModel>
+<mxfile host="Electron">
+  <diagram id="Zf2BPSiiUA6MZx4j24KD" name="第 1 页">
+    <mxGraphModel dx="967" dy="683" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0" adaptiveColors="auto">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="title" parent="1" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=16;fontStyle=1;" value="数据冷却沉降：访问频率随时间下降，逐级触发压缩" vertex="1">
+          <mxGeometry height="40" width="600" x="200" y="20" as="geometry" />
+        </mxCell>
+        <mxCell id="t0" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" value="数据写入&lt;div&gt;热数据，频繁访问&lt;/div&gt;" vertex="1">
+          <mxGeometry height="70" width="170" x="40" y="100" as="geometry" />
+        </mxCell>
+        <mxCell id="t1" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" value="访问频率随时间下降&lt;div&gt;数据逐步冷却&lt;/div&gt;" vertex="1">
+          <mxGeometry height="70" width="170" x="270" y="100" as="geometry" />
+        </mxCell>
+        <mxCell id="t2" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" value="短期未访问（≥ 7 天）&lt;div&gt;触发浅压缩：LZ4&lt;/div&gt;" vertex="1">
+          <mxGeometry height="70" width="190" x="530" y="100" as="geometry" />
+        </mxCell>
+        <mxCell id="t3" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" value="长期未访问（≥ 14 天）&lt;div&gt;触发深压缩：LZMA&lt;/div&gt;" vertex="1">
+          <mxGeometry height="70" width="210" x="820" y="100" as="geometry" />
+        </mxCell>
+        <mxCell id="e01" edge="1" parent="1" source="t0" style="endArrow=classic;html=1;rounded=1;edgeStyle=orthogonalEdgeStyle;" target="t1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e01Label" parent="1" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=11;" value="时间流逝" vertex="1">
+          <mxGeometry height="20" width="50" x="215" y="115" as="geometry" />
+        </mxCell>
+        <mxCell id="e12" edge="1" parent="1" source="t1" style="endArrow=classic;html=1;rounded=1;edgeStyle=orthogonalEdgeStyle;" target="t2">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e12Label" parent="1" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=11;" value="达到浅压缩阈值" vertex="1">
+          <mxGeometry height="20" width="88" x="442" y="115" as="geometry" />
+        </mxCell>
+        <mxCell id="e23" edge="1" parent="1" source="t2" style="endArrow=classic;html=1;rounded=1;edgeStyle=orthogonalEdgeStyle;" target="t3">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e23Label" parent="1" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=11;" value="达到深压缩阈值" vertex="1">
+          <mxGeometry height="20" width="88" x="720" y="115" as="geometry" />
+        </mxCell>
+        <mxCell id="note" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=none;strokeColor=default;dashed=1;align=left;verticalAlign=middle;fontSize=12;" value="判定依据：扫描 data node 进程内存中的 block 元信息（block id + atime），不遍历文件系统；阈值为配置项。" vertex="1">
+          <mxGeometry height="50" width="990" x="40" y="210" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
