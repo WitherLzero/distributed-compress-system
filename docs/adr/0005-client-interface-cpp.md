@@ -34,7 +34,7 @@ struct Options {                  // 全部可配置项；数值默认值占位�
     std::string data_dir;
     std::string master_addr = "127.0.0.1:8001";
     int scan_interval_sec = 30;
-    /* …压缩率阈值等数值待 issue 02-B 定稿… */
+    double min_saving_ratio = 0.10;      // 整块节省率阈值，低于则放弃压缩（见设计文档 5.4）
 };
 
 class Client {
@@ -79,5 +79,5 @@ const char* Version() noexcept;       // 宿主启动时校验兼容性
 ## 关联
 
 - 取代：[ADR-0003](0003-c-abi-client-interface.md)（Superseded）
-- 接口规格更新位置：ADR 本节为定稿记录；设计文档 §6.2 重写随 issue 02 B/C/D 全部定稿后一次落
+- 接口规格更新位置：ADR 本节为定稿记录；设计文档 §6.2 已按本节重写（2026-11-07，随 issue 02 A–D 全部定稿一次落）
 - 讨论记录：`meeting/见识星球 昕棋 软件研发实习第3课.md`（01:05:31–01:07:39）；issue 02-A 讨论（2026-11-07）
