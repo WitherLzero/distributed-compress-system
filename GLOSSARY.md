@@ -16,7 +16,7 @@
 | | 内容 |
 |---|---|
 | **要实现的** | `compress_client`（动态库）、`compress_master`、`compress_server` |
-| **不实现的** | HDFS / 存储集群、MapReduce / Spark、调度器（YARN / K8s） |
+| **不实现的** | 存储集群（HDFS 类）、离线计算集群内的批处理框架、调度器（YARN / K8s / 自研） |
 
 三者都是**既有系统**：我们从存储集群**读写数据**，在离线集群**借住算力**。本地没有这两个环境，故用 mock 替代（见 `docs/adr/0001`）。
 
@@ -33,10 +33,10 @@
 | 系统 | 性质 | 对接形态 |
 |---|---|---|
 | **存储集群（类 HDFS）** | 分布式文件系统 | **API 对接**：读写数据 |
-| **MapReduce / Spark** | 计算框架 | **无 API 对接**——只是"集群忙时的来源"，我们是它的邻居 |
+| **离线计算集群（调度系统）** | 批处理算力来源 | **无 API 对接**——只是"集群忙时的来源"，我们是它的邻居 |
 | **调度器（YARN / K8s）** | 资源调度器 | **管理接口**：决定 server 何时生、何时死 |
 
-> 关键：**MR/Spark 不提供任何我们要调的接口**。它们的意义是解释"这个集群为什么有忙闲之分"。
+> 关键：**集群内的批处理框架不提供任何我们要调的接口**。它们的意义是解释"这个集群为什么有忙闲之分"。
 
 ## 控制面 / 数据面分离
 
@@ -63,17 +63,17 @@
 | 术语 | 含义 |
 |---|---|
 | **datanode** | 存储集群中实际持有数据的节点；`compress_client` 作为 lib 嵌入其中 |
-| **xtime** | 数据的"最后访问时间"，用于判定压缩触发条件（**第2课已澄清**：即文件系统自带 atime，block 元数据含 block id + xtime，client 只读不记） |
+| **xtime** | 数据的"最后访问时间"，用于判定压缩触发条件（即文件系统自带 atime，block 元数据含 block id + xtime，client 只读不记）。**第3课红线**：扫描对象是 data node **进程内存中**的 block 元信息，**绝不遍历文件系统** |
 | **浅压缩** | 7 天无访问触发，LZ4，快（~1 GB/s），压缩率较低 |
 | **深压缩** | 14 天无访问触发，LZMA，极慢（~1 MB/s），压缩率高 |
 | **注册** | server 启动后首次心跳即完成注册（注册与心跳**合并**，注册表不持久化） |
 | **心跳** | server 周期上报"我还活着 + 当前负载"（持续，5s 周期） |
-| **判死** | master 判定 server 已死亡：周期扫描（1~2s）最后心跳时间戳，超 20s（×4 周期）剔除；查询时过滤兜底 |
+| **判死** | master 判定 server 已死亡：周期扫描（1~2s）最后心跳时间戳，超判死阈值剔除（**阈值 = 心跳周期 × 倍数**，当前 5s × 4 = 20s）；查询时过滤兜底 |
 | **反压（backpressure）** | server 队列过深时拒绝/延迟，促使 client 退避并换 server 重试 |
 | **退避（backoff）** | client 遇忙后的等待再重试策略 |
 | **附件（attachment）** | BRPC 传输大 payload 的机制；压缩数据走附件，控制消息走 Protobuf |
 | **元信息** | 压缩后必须记录的信息（原始长度、压缩后长度、压缩单位等），否则无法解压；与数据同址存为文件头（4KB 对齐区 + 逐块条目） |
-| **C ABI 边界** | compress_client 对宿主只暴露 C 函数接口（`compress_client.h`，6 函数）；C++ 异常/对象/指针不得越过该边界 |
+| **client 对外接口** | 第 3 课起由 C ABI 回退为 **C++ 接口**（ADR-0005，取代 ADR-0003）——宿主假设为类 HDFS 的 C++ 系统，同语言无 ABI 不稳定问题；具体形态待 issue 02-A 定稿 |
 | **单机流控** | compress_client 主动限制自身网络/磁盘消费速度，为 datanode 前台业务保留资源（压缩是客人，前台是主人） |
 | **令牌桶** | 流控记账模型：按固定速率向有上限的桶注入令牌，消费前先取令牌，桶空则等待；存量令牌允许短时突发，长期速率被注入速率约束 |
 | **IOPS** | 每秒输入/输出操作次数。HDD 随机 IO 仅 ~140 IOPS（顺序读却有 ~100+MB/s），是压缩批量 IO 与前台随机读争抢的真正瓶颈 |
@@ -91,7 +91,7 @@
 | 外部系统详解、部署形态、完整时序 | `docs/research/external-systems.md` |
 | 本地 mock 决策 | `docs/adr/0001-local-mock-external-clusters.md` |
 | 控制面不做 HA | `docs/adr/0002-no-control-plane-ha.md` |
-| client C ABI 接口决策 | `docs/adr/0003-c-abi-client-interface.md` |
+| client 接口决策（C ABI → C++） | `docs/adr/0003-c-abi-client-interface.md`（Superseded）→ `docs/adr/0005-client-interface-cpp.md` |
 | 接口 proto3 选型 | `docs/adr/0004-proto3-syntax.md` |
 | W1 任务与验收 | `.scratch/week1-background-and-design/spec.md` |
 | W2 任务与验收 | `.scratch/week2-design-finalization/spec.md` |

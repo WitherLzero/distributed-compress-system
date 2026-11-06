@@ -1,6 +1,8 @@
 # ADR-0003: compress_client 对外接口采用 C ABI 最小函数集
 
-- **Status**: Accepted（2026-10-31 学员定稿；待导师审阅）
+> **⚠️ 本 ADR 已被取代（Superseded）**：2026-11-03 第 3 课导师反馈后，client 对外接口回退为 C++ 接口，见 [ADR-0005](0005-client-interface-cpp.md)。本文保留作历史决策记录。
+
+- **Status**: Superseded（2026-10-31 Accepted → 2026-11-03 由 ADR-0005 取代）
 - **Date**: 2026-10-31
 - **Deciders**: 林昕祺（学员）
 

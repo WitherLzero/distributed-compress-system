@@ -7,16 +7,16 @@
         <mxCell id="laneClient" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=none;verticalAlign=top;fontStyle=1;dashed=1;fontSize=13;" value="compress_client（数据节点内）" vertex="1">
           <mxGeometry height="700" width="230" x="40" y="40" as="geometry" />
         </mxCell>
-        <mxCell id="c1" parent="laneClient" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" value="1. 扫描：按 atime 识别冷数据候选" vertex="1">
+        <mxCell id="c1" parent="laneClient" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" value="1. 扫描：读进程内存 block 元信息（atime）识别冷数据候选" vertex="1">
           <mxGeometry height="50" width="164.2857142857143" x="32.85714285714286" y="60" as="geometry" />
         </mxCell>
-        <mxCell id="c2" parent="laneClient" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" value="2. 查询可用实例&lt;div&gt;（固定周期，期间用缓存列表）&lt;/div&gt;" vertex="1">
+        <mxCell id="c2" parent="laneClient" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" value="2. 列表同步线程周期拉取实例&lt;div&gt;存内存（选点用缓存）&lt;/div&gt;" vertex="1">
           <mxGeometry height="60" width="166.34" x="31.830000000000002" y="180" as="geometry" />
         </mxCell>
-        <mxCell id="c3" parent="laneClient" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" value="4. random 选点，发送压缩请求&lt;div&gt;（原始数据走附件）&lt;/div&gt;" vertex="1">
+        <mxCell id="c3" parent="laneClient" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" value="4. 从缓存 random 选点，发 RPC&lt;div&gt;（原始数据走附件，阻塞等响应）&lt;/div&gt;" vertex="1">
           <mxGeometry height="60" width="180.71428571428575" x="24.642857142857146" y="380" as="geometry" />
         </mxCell>
-        <mxCell id="c4" parent="laneClient" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" value="6. 校验 → temp 写入 → rename 原子替换 → 记录元信息" vertex="1">
+        <mxCell id="c4" parent="laneClient" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" value="6. 校验（rename 前整文件读回）→ temp 写入 → rename 原子替换 → 记录元信息" vertex="1">
           <mxGeometry height="80" width="180.71428571428575" x="24.642857142857146" y="560" as="geometry" />
         </mxCell>
         <mxCell id="f12" edge="1" parent="laneClient" source="c1" style="endArrow=classic;html=1;rounded=1;edgeStyle=orthogonalEdgeStyle;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="c2">
@@ -40,7 +40,7 @@
         <mxCell id="laneServer" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=none;verticalAlign=top;fontStyle=1;dashed=1;fontSize=13;" value="compress_server（离线集群）" vertex="1">
           <mxGeometry height="700" width="220" x="600" y="40" as="geometry" />
         </mxCell>
-        <mxCell id="s1" parent="laneServer" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" value="5. 入队 → 工作线程执行压缩&lt;div&gt;（LZ4 / LZMA）&lt;/div&gt;" vertex="1">
+        <mxCell id="s1" parent="laneServer" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" value="5. 入队 → 工作线程执行压缩&lt;div&gt;（LZ4 / LZMA，无条件返回结果）&lt;/div&gt;" vertex="1">
           <mxGeometry height="60" width="161.33333333333334" x="29.330714285714283" y="380" as="geometry" />
         </mxCell>
                 <mxCell id="f2m" edge="1" parent="1" source="c2" style="endArrow=classic;html=1;rounded=1;edgeStyle=orthogonalEdgeStyle;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" target="m1">
