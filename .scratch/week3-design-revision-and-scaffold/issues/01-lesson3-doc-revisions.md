@@ -1,6 +1,6 @@
 # 01 — 第 3 课文档修订：可直接处理项（14 条）
 
-- **Status**: ready-for-agent（agent 执行，学员终审后发群）
+- **Status**: ready-for-human（14 条已由 agent 执行完毕，commit `5f9e234`，待学员终审后发群）
 - **依据**: `meeting/见识星球 昕棋 软件研发实习第3课.md`（2026-11-03），条目后标注转录时间戳
 
 ## Goal
