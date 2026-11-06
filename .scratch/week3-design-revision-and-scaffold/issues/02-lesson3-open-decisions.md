@@ -1,21 +1,21 @@
 # 02 — 第 3 课遗留决策：待讨论定稿（4 项）
 
-- **Status**: in-progress（待讨论；每项给出 agent 提案，讨论后落设计文档 v0.3）
+- **Status**: in-progress（A ✅ 已定稿 2026-11-07；B/C/D 待讨论；每项讨论后落设计文档 v0.3）
 - **依据**: `meeting/见识星球 昕棋 软件研发实习第3课.md`（2026-11-03）
-- **阻塞关系**: 02-D 阻塞 issue 03 的文件头结构体落地；02-A 阻塞 client .so 与 mock 宿主的对接（不影响 W3 骨架）
+- **阻塞关系**: 02-D 阻塞 issue 03 的文件头结构体落地；~~02-A 阻塞 client .so 与 mock 宿主的对接~~（A 已定稿，不再阻塞）
 
-## A. client 对外 C++ 接口形态
+## A. client 对外 C++ 接口形态 ✅ 已定稿（2026-11-07）
 
-**背景**：导师否决 C ABI（01:05:31–01:07:39），方向已定回 C++，但接口长什么样没定。直接影响 §6.2 / §7.2 和 W5 client 编码。
+**背景**：导师否决 C ABI（01:05:31–01:07:39），方向已定回 C++（ADR-0005）。2026-11-07 讨论定稿，**采纳选项 1（函数式 C++ API + 错误码）**，四个子问题结论：
 
-**选项**：
+1. **错误处理**：`enum class CompressErr`（包 §5.5 框架 + 移植 C ABI 七个返回码），接口 `noexcept`，库内异常在边界统一 catch 转错误码——ADR-0003 时代「异常不得穿越边界」的纪律保留，理由从「ABI」改为「一个 bug 不应杀死宿主进程」；
+2. **配置传入**：`Options` struct 注入，**库内禁止 `DEFINE_*`（gflags）**——gflags 注册表是进程级全局且无命名空间，库在 dlopen 时注册与宿主冲突即 abort；且库 flag 只能经宿主命令行传，隐式耦合宿主启动契约。gflags 仅用于带 main() 的二进制（master/server/mock_datanode）；
+3. **形态**：`namespace compress::client`（target 同名）；工厂 `Status Create(const Options&, std::unique_ptr<Client>* out)`（无异常出口）；`class Client` Pimpl，`Start()/Shutdown()` 幂等、析构 RAII 兜底；`Version()` 校验兼容；
+4. **`Read` 语义**：对齐 POSIX `pread`——同步阻塞、调用方出 buffer、缓冲不足时 `*out_len` 带回所需容量（`kBufSmall`，原 `CCL_EBUFSMALL`）、可多线程并发。
 
-1. **函数式 C++ API + 错误码（agent 提案）**：`namespace compress::client`；工厂函数返回 `std::unique_ptr<Client>`；`Start() / Shutdown() / Read(path, offset, buf, len) -> CompressErr`；错误用 §5.5 错误码枚举，不用异常跨接口。
-2. 类 + 异常：错误抛异常。与"server 随时被杀、错误码驱动退避"的系统调性不一致，且接口边界异常安全要求高。
+定稿细节落 [ADR-0005](../../docs/adr/0005-client-interface-cpp.md)「已定接口形态」节；设计文档 §6.2 重写随 B/C/D 全部定稿后一次落（见本 issue Acceptance）。
 
-**遗留子问题**：配置怎么传（gflags 全局 vs 构造参数 struct）；`Read` 语义是否与文件系统 read 对齐（同步、errno 风格）。
-
-➡️ agent 推荐选项 1。
+**被否决项**：类 + 异常（与"server 随时被杀、错误码驱动退避"的系统调性不一致；接口边界异常安全成本高）。
 
 ## B. 压缩率阈值与"放弃压缩"的落盘规则
 
