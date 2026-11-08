@@ -17,3 +17,7 @@ Single-context: `GLOSSARY.md` + `docs/adr/` at the repo root (created lazily by 
 ### Dev workflow
 
 Windows + WSL2 双副本协作约定（git 拓扑、两侧分工、git 纪律、已知坑）：`docs/agents/dev-workflow.md`。环境搭建实操另见 `docs/research/wsl-build-environment.md`。
+
+### Collaboration protocol
+
+人机协作节奏（实现票 → 检查点 → 四拍循环、学习三层细度）：`docs/agents/collaboration-protocol.md`。
