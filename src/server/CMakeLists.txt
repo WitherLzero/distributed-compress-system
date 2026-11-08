@@ -1,0 +1,2 @@
+add_executable(compress_server main.cpp)
+target_link_libraries(compress_server PRIVATE compress_common)

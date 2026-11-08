@@ -1,0 +1,2 @@
+add_executable(mock_datanode mock_datanode.cpp)
+target_link_libraries(mock_datanode PRIVATE compress_common)

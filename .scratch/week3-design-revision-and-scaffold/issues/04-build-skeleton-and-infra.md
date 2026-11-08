@@ -9,9 +9,9 @@
 **Status**: ready-for-agent
 
 - [x] 顶层构建脚本 + 模块子目录组织（common / client / master / server / 测试目录），设计文档 §7.2 的类/文件映射有对应落点
-- [ ] BRPC 及其依赖（glog、gflags、protobuf、leveldb 等）经既有 find-module 接入；greatest-version 约束沿用环境搭建期已验证的组合
-- [ ] gtest 测试框架接入构建，ctest 一键收集
-- [ ] 基础设施三件套：进程级日志/配置框架初始化胶水（启动入口调用一次完成解析与安装）、自产错误码枚举（设计文档 §5.5 框架 + 移植期七返回码）带描述函数
-- [ ] 三个进程入口（master / server / mock 宿主）+ client 动态库目标编译通过
-- [ ] 三二进制启动时日志打出关键配置项；SIGTERM/SIGINT 捕获后优雅退出（退出码 0，日志记录收到信号）
-- [ ] 宿主二进制只持有 main() 级配置定义，库侧零全局配置注册（ADR-0005 纪律）
+- [x] BRPC 及其依赖（glog、gflags、protobuf、leveldb 等）经既有 find-module 接入；greatest-version 约束沿用环境搭建期已验证的组合
+- [x] gtest 测试框架接入构建，ctest 一键收集
+- [x] 基础设施三件套：进程级日志/配置框架初始化胶水（启动入口调用一次完成解析与安装）、自产错误码枚举（设计文档 §5.5 框架 + 移植期七返回码）带描述函数
+- [x] 三个进程入口（master / server / mock 宿主）+ client 动态库目标编译通过
+- [x] 三二进制启动时日志打出关键配置项；SIGTERM/SIGINT 捕获后优雅退出（退出码 0，日志记录收到信号）
+- [x] 宿主二进制只持有 main() 级配置定义，库侧零全局配置注册（ADR-0005 纪律）
