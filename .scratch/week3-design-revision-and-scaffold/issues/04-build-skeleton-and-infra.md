@@ -8,7 +8,7 @@
 
 **Status**: ready-for-agent
 
-- [ ] 顶层构建脚本 + 模块子目录组织（common / client / master / server / 测试目录），设计文档 §7.2 的类/文件映射有对应落点
+- [x] 顶层构建脚本 + 模块子目录组织（common / client / master / server / 测试目录），设计文档 §7.2 的类/文件映射有对应落点
 - [ ] BRPC 及其依赖（glog、gflags、protobuf、leveldb 等）经既有 find-module 接入；greatest-version 约束沿用环境搭建期已验证的组合
 - [ ] gtest 测试框架接入构建，ctest 一键收集
 - [ ] 基础设施三件套：进程级日志/配置框架初始化胶水（启动入口调用一次完成解析与安装）、自产错误码枚举（设计文档 §5.5 框架 + 移植期七返回码）带描述函数
