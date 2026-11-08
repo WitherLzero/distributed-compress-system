@@ -30,6 +30,7 @@
 ## 3. git 纪律
 
 - 同一时刻**不要两侧同时改同一批文件**；任一侧 push 前确认工作区干净，另一侧先 pull。
+- **push 节奏**（2026-11-08 学员定）：功能分支在本地沉淀多个 commit，攒到「可开 PR / 可给人评审」的进度点才 push 一次；不是每建分支、每完成一个检查点就推远端。
 - 代码开发走分支；W3 脚手架分支名为 `feat/w3-scaffold`（2026-11-06 grilling 共识），每周合并回 main；文档/issue 小改动可直接 main。
 - 人机协作节奏（票→检查点→四拍循环、学习三层）见 `docs/agents/collaboration-protocol.md`。
 - GitHub remote 已建成（2026-11-01）：`https://github.com/WitherLzero/distributed-compress-system`（private），`main` 已推送；两侧都以它为权威源，任一侧 push 后另一侧先 pull。
