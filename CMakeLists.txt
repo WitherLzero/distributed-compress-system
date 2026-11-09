@@ -13,6 +13,7 @@ find_package(gflags REQUIRED)          # 与 BRPC 同源，配置项解析依赖
 find_package(glog REQUIRED)            # 进程日志：仅带 main() 的二进制使用，库不强制
 find_package(BRPC REQUIRED)            # BRPC 无 CMake config 包，依赖 cmake/FindBRPC.cmake
 
+add_subdirectory(proto)
 add_subdirectory(src)
 add_subdirectory(mock)                 # 联调替身进程：mock_datanode（替换 hello-brpc 冒烟位）
 

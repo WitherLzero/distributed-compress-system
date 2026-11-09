@@ -1,1 +1,6 @@
-# 单测收集入口。首个测试随票 06（codec / 文件头）到来；gtest 接入已在顶层构建脚本预留。
+# 单测收集入口。纯逻辑类单测按票 06/07 增补；此处挂票 05 的 proto 冒烟。
+find_package(GTest REQUIRED)   # libgtest-dev 1.11：静态库 + GTestConfig
+
+add_executable(proto_smoke_test proto_smoke_test.cc)
+target_link_libraries(proto_smoke_test PRIVATE compress_proto GTest::gtest GTest::gtest_main)
+add_test(NAME proto_smoke COMMAND proto_smoke_test)
