@@ -14,3 +14,8 @@
 - [ ] WSL 侧干净 clone 从零构建 + 全部测试通过，结果贴回 issue 03
 - [ ] 功能分支合并回主干，提交信息遵循 Conventional Commits
 - [ ] issue 03 Acceptance 六条全绿并关闭，父 issue 状态由学员终审后更新
+
+## W5 欠账（CP4 评审沉淀，2026-11-09）
+
+- 输入截断的错误映射测试（LZ4 帧解析错 vs LZMA 按 in_pos/in_len 区分截断与容量不足）：格式相关实现细节，属读路径场景，W5 集成测试补。
+- LZMA 解压侧 kBufSmall 的精确所需容量：xz 格式原始大小在流尾索引，one-shot API 不暴露；真实读路径以文件头 origin_block_size 为准，W5 接入后按设计文档复核 tests/codec_test.cc 中 Lz4DecompressSmallBufferReportsSize 的语义。
