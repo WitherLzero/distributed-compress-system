@@ -58,3 +58,4 @@
 | 工具 | 位置 / 用法 |
 |---|---|
 | draw.io 桌面版（含导出 CLI） | `D:\drawio\draw.io\draw.io.exe`（自定义安装路径，不在 PATH）。PNG 导出：`draw.io.exe --disable-gpu -x -f png -e -b 10 -o out.png in.drawio`；Electron 单实例，连续导出需逐条串行执行；DSH 受限沙箱下 Electron IPC 会被拦（报 0x5），需 full-access 模式 |
+| dsh-wsl 插件（WSL 侧原生读写与命令执行） | 已装于本机 profile，注册 `wsl` / `wsl-read` / `wsl-write` / `wsl-edit` / `wsl-grep` / `wsl-path` / `wsl-env` / `wsl-doctor` / `wsl-term` 十个工具。**WSL 侧一切文件读写一律走 `wsl-read`/`wsl-write`/`wsl-edit`**（发行版内部原子写，临时文件+rename 落地），构建与验收命令走 `wsl`（超时/后台 job/stdin 喂长脚本），长驻交互式工作（W5 服务联调）用 `wsl-term`。旧做法全部退役：edit/write 工具走 `\\wsl$` 会报 `GetFileSecurityW EIO`（DSH 沙箱 ACL 对 9p 共享的已知限制）；pwsh 套 `wsl.exe` 有引号层数与 PS 5.1 加 BOM/转 CRLF 的污染；temp+base64 通道仅在必须保二进制字节时兜底。注意该插件在 DSH 文件沙箱之外运行 |
