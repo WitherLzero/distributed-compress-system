@@ -676,7 +676,7 @@ const char* Version() noexcept;       // 宿主启动时校验兼容性
 struct CompressedFileHeader {
     char     magic[4];          // 魔数 "CPS1"，标识压缩块格式
     uint16_t version;           // 格式版本，兼容性演进用（见 8.1）
-    uint8_t  algorithm;         // 整块统一算法（1=LZ4, 2=LZMA），不设切片级算法
+    uint8_t  algorithm;         // 整块统一算法（0=LZ4, 1=LZMA，即 CompressLevel 枚举原值），不设切片级算法
     uint8_t  flags;             // 标志位（预留）
     uint32_t slice_count;       // 切片条目数量
     uint64_t origin_block_size; // 原始块长度（完整性校验）
@@ -686,7 +686,8 @@ struct CompressedFileHeader {
 // 切片条目 8B/条，紧随定长头集中存放，不与数据交错
 struct SliceEntry {
     uint32_t compressed_len;    // 压后长度：解压取数 + 前缀和定位下一条
-    uint32_t crc32;             // 压后数据校验（RPC 无校验和，防网络抖 silent corruption）
+    uint32_t crc32;             // 切片原始字节的 CRC32：解压后比对，覆盖压缩/网络/解压全链路
+                                // （gzip 式端到端校验；校验压后数据拦不住解压器 bug 的错误输出）
 };
 // 不存的偏移均可推导：origin_offset = 条目序号 × slice_size（定长切片）；
 // compressed_offset = 定长头 + 条目区 + 前序条目 compressed_len 之和（前缀和）。

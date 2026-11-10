@@ -1,0 +1,92 @@
+// 内部接口 IDL —— 设计文档 §6.1 的单一事实源。
+// 三对消息族：client↔master 查询、server↔master 心跳注册、client↔server 压缩。
+// 数据本体经 RPC 附件传输，消息只带元信息（§6.1.3）。
+// 生成：构建期 protoc --cpp_out，产物不入库。service 桩（protoc-gen-brpc）属 W5。
+syntax = "proto3";
+
+package compress.system;
+
+// 统一消息头：协议版本 + 链路追踪标识（§6.1）
+message MsgHeader {
+    uint32 version  = 1;    // 接口协议版本
+    string trace_id = 2;    // 全链路追踪标识
+}
+
+// ---- 6.1.1 客户端向 master 查询可用实例 ----
+message WorkersInfoRequest {
+    MsgHeader header   = 1;
+    string    client_id = 2;
+}
+
+message WorkerInfo {
+    string server_id   = 1;
+    string ip          = 2;
+    int32  port        = 3;
+    uint32 cpu_percent = 4;
+    uint32 mem_percent = 5;
+    uint32 queue_len   = 6;    // 负载字段保留：策略演进备用，当前选点不使用
+    int64  last_hb_ms  = 7;
+}
+
+message WorkersInfoResponse {
+    MsgHeader       header  = 1;
+    repeated WorkerInfo workers = 2;
+}
+
+service MasterService {
+    rpc GetWorkersInfo(WorkersInfoRequest) returns (WorkersInfoResponse);
+}
+
+// ---- 6.1.2 服务实例向 master 上报心跳（首报即注册） ----
+message HeartbeatRequest {
+    MsgHeader header       = 1;
+    string    server_id    = 2;
+    int32     port         = 3;
+    uint32    cpu_percent  = 4;
+    uint32    mem_percent  = 5;
+    uint32    queue_len    = 6;
+}
+
+message HeartbeatResponse {
+    MsgHeader header           = 1;
+    bool      accepted         = 2;
+    int32     beat_interval_ms = 3;
+}
+
+service RegistryService {
+    rpc Heartbeat(HeartbeatRequest) returns (HeartbeatResponse);
+}
+
+// ---- 6.1.3 客户端向服务实例发起压缩 ----
+enum CompressLevel {
+    SHALLOW = 0;    // 浅压缩，LZ4
+    DEEP    = 1;    // 深压缩，LZMA
+}
+
+enum CompressResult {
+    OK     = 0;    // 压缩成功（无条件返回，含膨胀结果；收益校验在 client 侧，见 5.4）
+    FAILED = 1;    // 压缩执行失败
+}
+// 并发超限拒绝由 RPC 层 ELIMIT 表达（§5.5），不进业务枚举；
+// 「收益为负不压」是 client 侧整块决策，server 不感知（§5.4）。
+
+message CompressRequest {
+    MsgHeader     header     = 1;
+    string        data_id    = 2;
+    uint64        origin_len = 3;
+    CompressLevel level      = 4;
+    uint64        version    = 5;    // 写回并发保护预留（rename 原子替换为主）
+    // 原始数据经 RPC 附件传输
+}
+
+message CompressResponse {
+    MsgHeader      header         = 1;
+    CompressResult result         = 2;
+    uint64         compressed_len = 3;
+    string         err_msg        = 4;
+    // 压缩后数据经 RPC 附件传输
+}
+
+service CompressService {
+    rpc Compress(CompressRequest) returns (CompressResponse);
+}

@@ -1,0 +1,7 @@
+# Format all C/C++ sources of this project.
+# Google base (2-space indent, pointer-left), widened to 100 columns.
+BasedOnStyle: Google
+ColumnLimit: 100
+AllowShortFunctionsOnASingleLine: Inline
+DerivePointerAlignment: false
+PointerAlignment: Left
