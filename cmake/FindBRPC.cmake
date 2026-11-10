@@ -25,6 +25,8 @@ find_library(BRPC_Z_LIBRARY NAMES z)
 include(FindPackageHandleStandardArgs)
 find_package_handle_standard_args(BRPC
     REQUIRED_VARS BRPC_LIBRARY BRPC_INCLUDE_DIR
+                  BRPC_LEVELDB_LIBRARY BRPC_SSL_LIBRARY
+                  BRPC_CRYPTO_LIBRARY BRPC_Z_LIBRARY
 )
 
 if(BRPC_FOUND AND NOT TARGET BRPC::brpc)
