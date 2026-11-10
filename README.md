@@ -6,10 +6,9 @@
 
 ## 环境依赖
 
-- Linux（开发环境为 WSL2 Ubuntu 22.04，搭建实录见 [docs/research/wsl-build-environment.md](docs/research/wsl-build-environment.md)）
-- CMake ≥ 3.16、Ninja 或 Make、g++（C++17）
-- 依赖库：BRPC、protobuf、glog、gflags、LZ4、liblzma、gtest（测试）
-- protoc ≥ 3.0（构建期由 CMake 调用，生成代码不入库）
+- Linux、CMake ≥ 3.16、支持 C++17 的编译器
+- 第三方库：BRPC、protobuf、glog、gflags、LZ4、liblzma；测试需 gtest
+- 完整搭建步骤见 [docs/environment-setup.md](docs/environment-setup.md)（含 BRPC 源码构建）
 
 ## 一键构建与测试
 

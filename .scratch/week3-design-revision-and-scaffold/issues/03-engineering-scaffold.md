@@ -52,3 +52,13 @@ WSL 侧仓库具备完整构建链，三个二进制（`compress_master` / `comp
 ## 执行中可裂解
 
 若执行中显大，按 tracker 惯例裂为 03a（脚手架 + 编译打通）/ 03b（公共类 + 单测），不算返工。
+
+## 干净 clone 复验结果（2026-11-10，票 09）
+
+复验对象：`feat/w3-scaffold` @ `764edaf`，`git clone` 至全新目录 `/tmp/clean-verify`，从零执行：
+
+- configure：`cmake -B build` exit=0
+- 构建：`cmake --build build -j4` exit=0，警告数 0（`-Wall -Wextra` 全局生效）
+- 测试：`ctest --test-dir build` 5/5 全过（codec 13 用例 / 文件头 6 用例 / 队列 6 用例 / replacer 7 用例 / proto 冒烟 3 用例）
+- 三二进制启动 + SIGTERM 干净退出：exit=0，日志 `stopped, signal=15`
+- 产物齐全：`libcompress_client.so`、`compress_master`、`compress_server`、`mock_datanode`
