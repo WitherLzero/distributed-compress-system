@@ -4,6 +4,10 @@ project(distributed_compress_system LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+    add_compile_options(-Wall -Wextra)   # 票 08 验收线：全库零警告
+endif()
+
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)  # compile_commands.json：clangd / VS Code 补全
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")

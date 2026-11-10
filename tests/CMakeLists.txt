@@ -18,3 +18,8 @@ find_package(Threads REQUIRED)
 add_executable(task_queue_test task_queue_test.cc)
 target_link_libraries(task_queue_test PRIVATE compress_api GTest::gtest GTest::gtest_main Threads::Threads)
 add_test(NAME task_queue COMMAND task_queue_test)
+
+# 票 08：原子替换器（临时文件 + rename）单测
+add_executable(atomic_replacer_test atomic_replacer_test.cc)
+target_link_libraries(atomic_replacer_test PRIVATE compress_meta GTest::gtest GTest::gtest_main)
+add_test(NAME atomic_replacer COMMAND atomic_replacer_test)
