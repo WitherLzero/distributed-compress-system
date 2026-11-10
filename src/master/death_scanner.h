@@ -6,10 +6,10 @@
 namespace compress {
 
 class DeathScanner {
-public:
-    DeathScanner() = default;
+ public:
+  DeathScanner() = default;
 
-    void Run();  // 扫描线程主循环
+  void Run();  // 扫描线程主循环
 };
 
 }  // namespace compress

@@ -5,11 +5,11 @@
 namespace compress {
 
 class CompressExecutor {
-public:
-    CompressExecutor() = default;
+ public:
+  CompressExecutor() = default;
 
-    void Run();        // 工作线程主循环：Pop 任务直至队列关闭且排干
-    void OnRpcFail();  // 退避后重选实例（复用已读缓冲区，见 §5.3）
+  void Run();        // 工作线程主循环：Pop 任务直至队列关闭且排干
+  void OnRpcFail();  // 退避后重选实例（复用已读缓冲区，见 §5.3）
 };
 
 }  // namespace compress

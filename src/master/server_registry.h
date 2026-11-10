@@ -9,17 +9,17 @@
 namespace compress {
 
 struct WorkerInfo {
-    std::string endpoint;                  // 实例地址；注册 = 首次心跳 upsert
-    std::int64_t last_heartbeat_ms = 0;    // 最近心跳时间戳：DeathScanner 判死的唯一依据
-    // 负载字段（queue_len/cpu/mem，心跳上报 §6.1）随 W4 补充
+  std::string endpoint;                // 实例地址；注册 = 首次心跳 upsert
+  std::int64_t last_heartbeat_ms = 0;  // 最近心跳时间戳：DeathScanner 判死的唯一依据
+  // 负载字段（queue_len/cpu/mem，心跳上报 §6.1）随 W4 补充
 };
 
 class ServerRegistry {
-public:
-    ServerRegistry() = default;
+ public:
+  ServerRegistry() = default;
 
-    void Upsert(const WorkerInfo& w);            // 注册 = 首次心跳 upsert
-    std::vector<WorkerInfo> HealthyWorkers();    // 原样返回当前注册表全量
+  void Upsert(const WorkerInfo& w);          // 注册 = 首次心跳 upsert
+  std::vector<WorkerInfo> HealthyWorkers();  // 原样返回当前注册表全量
 };
 
 }  // namespace compress

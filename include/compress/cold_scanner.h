@@ -5,11 +5,11 @@
 namespace compress {
 
 class ColdScanner {
-public:
-    ColdScanner() = default;
+ public:
+  ColdScanner() = default;
 
-    void Start(int interval_ms);  // 启动扫描线程，按周期触发 ScanOnce
-    void ScanOnce();              // 单轮：读内存 block 元信息(atime) → 产出候选 → 入队
+  void Start(int interval_ms);  // 启动扫描线程，按周期触发 ScanOnce
+  void ScanOnce();  // 单轮：读内存 block 元信息(atime) → 产出候选 → 入队
 };
 
 }  // namespace compress

@@ -10,11 +10,11 @@ class CompressRequest;  // proto 前向声明
 namespace compress {
 
 class WorkerPool {
-public:
-    WorkerPool() = default;
+ public:
+  WorkerPool() = default;
 
-    // 提交压缩任务（设计文档 §7.2 的 Submit(Task&&)，任务负载 = 压缩请求）
-    void Submit(::compress::system::CompressRequest&& request);
+  // 提交压缩任务（设计文档 §7.2 的 Submit(Task&&)，任务负载 = 压缩请求）
+  void Submit(::compress::system::CompressRequest&& request);
 };
 
 }  // namespace compress

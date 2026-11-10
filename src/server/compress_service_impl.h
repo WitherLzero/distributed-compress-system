@@ -16,13 +16,12 @@ class CompressResponse;
 namespace compress {
 
 class CompressServiceImpl {
-public:
-    CompressServiceImpl() = default;
+ public:
+  CompressServiceImpl() = default;
 
-    void Compress(google::protobuf::RpcController* ctrl,
-                  const ::compress::system::CompressRequest* req,
-                  ::compress::system::CompressResponse* resp,
-                  google::protobuf::Closure* done);
+  void Compress(google::protobuf::RpcController* ctrl,
+                const ::compress::system::CompressRequest* req,
+                ::compress::system::CompressResponse* resp, google::protobuf::Closure* done);
 };
 
 }  // namespace compress

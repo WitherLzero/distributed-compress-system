@@ -9,12 +9,12 @@
 namespace compress {
 
 class BlockMetaView {
-public:
-    BlockMetaView() = default;
+ public:
+  BlockMetaView() = default;
 
-    std::uint64_t Version(const std::string& block_path) const noexcept;  // 查询当前版本号
-    void Bump(const std::string& block_path) noexcept;                    // 读路径命中：版本 +1
-    void Remove(const std::string& block_path) noexcept;                  // 块删除：清除版本记录
+  std::uint64_t Version(const std::string& block_path) const noexcept;  // 查询当前版本号
+  void Bump(const std::string& block_path) noexcept;    // 读路径命中：版本 +1
+  void Remove(const std::string& block_path) noexcept;  // 块删除：清除版本记录
 };
 
 }  // namespace compress

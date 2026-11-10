@@ -5,10 +5,10 @@
 namespace compress {
 
 class ServerListSyncer {
-public:
-    ServerListSyncer() = default;
+ public:
+  ServerListSyncer() = default;
 
-    void Run();  // 周期 GetWorkersInfo → 更新内存缓存列表
+  void Run();  // 周期 GetWorkersInfo → 更新内存缓存列表
 };
 
 }  // namespace compress

@@ -7,10 +7,10 @@
 namespace compress {
 
 struct Options {
-    std::string data_dir;                          // 扫描根目录（块文件所在）
-    std::string master_addr = "127.0.0.1:8001";    // master 地址
-    int scan_interval_sec = 30;                    // 冷数据扫描周期
-    double min_saving_ratio = 0.10;                // 整块节省率阈值，低于则放弃压缩（§5.4）
+  std::string data_dir;                        // 扫描根目录（块文件所在）
+  std::string master_addr = "127.0.0.1:8001";  // master 地址
+  int scan_interval_sec = 30;                  // 冷数据扫描周期
+  double min_saving_ratio = 0.10;  // 整块节省率阈值，低于则放弃压缩（§5.4）
 };
 
 }  // namespace compress

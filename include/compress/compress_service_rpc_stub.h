@@ -5,7 +5,7 @@
 #include "compress/error_code.h"
 
 namespace compress::system {
-class CompressRequest;   // proto 前向声明（生成头在构建期产出）
+class CompressRequest;  // proto 前向声明（生成头在构建期产出）
 class CompressResponse;
 }  // namespace compress::system
 
@@ -14,12 +14,12 @@ namespace compress {
 class IRpcAdapter;  // RPC 接缝接口：W5 定稿声明，此处仅前向（设计文档 §7.2 注）
 
 class CompressServiceRpcStub {
-public:
-    explicit CompressServiceRpcStub(IRpcAdapter* adapter);
+ public:
+  explicit CompressServiceRpcStub(IRpcAdapter* adapter);
 
-    // 压缩请求调用：同步语义，超时/失败经返回值上抛，由调用方决定重试或放弃
-    CompressErr Compress(const ::compress::system::CompressRequest& req,
-                         ::compress::system::CompressResponse* resp);
+  // 压缩请求调用：同步语义，超时/失败经返回值上抛，由调用方决定重试或放弃
+  CompressErr Compress(const ::compress::system::CompressRequest& req,
+                       ::compress::system::CompressResponse* resp);
 };
 
 }  // namespace compress

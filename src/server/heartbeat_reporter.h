@@ -5,10 +5,10 @@
 namespace compress {
 
 class HeartbeatReporter {
-public:
-    HeartbeatReporter() = default;
+ public:
+  HeartbeatReporter() = default;
 
-    void Run();  // 心跳线程主循环
+  void Run();  // 心跳线程主循环
 };
 
 }  // namespace compress

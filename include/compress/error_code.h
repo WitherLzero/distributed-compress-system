@@ -7,24 +7,30 @@
 namespace compress {
 
 enum class CompressErr : std::uint8_t {
-    kOk = 0,
-    kInvalidArg,  // 参数非法
-    kWrongState,  // 调用顺序错（未 Start 就 Read 等）
-    kIo,          // 本地文件系统错误
-    kBufSmall,    // 缓冲不足，out_len 已带回所需容量，扩容重调一次
-    kBusy,        // 解压通道饱和，稍后重试
+  kOk = 0,
+  kInvalidArg,  // 参数非法
+  kWrongState,  // 调用顺序错（未 Start 就 Read 等）
+  kIo,          // 本地文件系统错误
+  kBufSmall,    // 缓冲不足，out_len 已带回所需容量，扩容重调一次
+  kBusy,        // 解压通道饱和，稍后重试
 };
 
 inline const char* ToString(CompressErr e) noexcept {
-    switch (e) {
-        case CompressErr::kOk:          return "kOk";
-        case CompressErr::kInvalidArg:  return "kInvalidArg";
-        case CompressErr::kWrongState:  return "kWrongState";
-        case CompressErr::kIo:          return "kIo";
-        case CompressErr::kBufSmall:    return "kBufSmall";
-        case CompressErr::kBusy:        return "kBusy";
-    }
-    return "unknown";
+  switch (e) {
+    case CompressErr::kOk:
+      return "kOk";
+    case CompressErr::kInvalidArg:
+      return "kInvalidArg";
+    case CompressErr::kWrongState:
+      return "kWrongState";
+    case CompressErr::kIo:
+      return "kIo";
+    case CompressErr::kBufSmall:
+      return "kBufSmall";
+    case CompressErr::kBusy:
+      return "kBusy";
+  }
+  return "unknown";
 }
 
 }  // namespace compress

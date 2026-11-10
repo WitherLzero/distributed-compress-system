@@ -15,23 +15,23 @@ namespace compress {
 constexpr std::uint32_t kFormatVersion = 1;
 constexpr size_t kFixedHeaderSize = 128;
 constexpr size_t kSliceEntrySize = 8;
-constexpr size_t kHeaderBudgetBytes = 4096;             // 一页预算：头 + 条目合计
-constexpr size_t kDefaultSliceSize = 4 * 1024 * 1024;   // 切片定长 4MB（02-D 钉死）
+constexpr size_t kHeaderBudgetBytes = 4096;            // 一页预算：头 + 条目合计
+constexpr size_t kDefaultSliceSize = 4 * 1024 * 1024;  // 切片定长 4MB（02-D 钉死）
 
 #pragma pack(push, 1)
 struct FileHeader {
-    char          magic[4];          // "CPS1"
-    std::uint16_t format_version;
-    std::uint8_t  algorithm;         // 0 = LZ4 浅压，1 = LZMA 深压（CompressLevel）
-    std::uint8_t  flags;
-    std::uint32_t slice_count;
-    std::uint64_t origin_block_size;
-    std::uint8_t  reserved[108];
+  char magic[4];  // "CPS1"
+  std::uint16_t format_version;
+  std::uint8_t algorithm;  // 0 = LZ4 浅压，1 = LZMA 深压（CompressLevel）
+  std::uint8_t flags;
+  std::uint32_t slice_count;
+  std::uint64_t origin_block_size;
+  std::uint8_t reserved[108];
 };
 
 struct SliceEntry {
-    std::uint32_t compressed_len;
-    std::uint32_t crc32;             // 切片原始字节的 CRC32
+  std::uint32_t compressed_len;
+  std::uint32_t crc32;  // 切片原始字节的 CRC32
 };
 #pragma pack(pop)
 
@@ -54,8 +54,8 @@ size_t SerializedHeaderSize(std::uint32_t slice_count) noexcept;
  *         或合计超出容量预算。
  */
 CompressErr SerializeHeader(const FileHeader& header, const SliceEntry* entries,
-                            std::uint32_t slice_count,
-                            std::uint8_t* out, size_t cap, size_t* out_len) noexcept;
+                            std::uint32_t slice_count, std::uint8_t* out, size_t cap,
+                            size_t* out_len) noexcept;
 
 /**
  * @brief 从字节区解析定长头与条目序列，并执行完整性校验。
@@ -70,8 +70,8 @@ CompressErr SerializeHeader(const FileHeader& header, const SliceEntry* entries,
  * @return kOk 表示成功；kBufSmall 表示长度不足；kInvalidArg 表示魔数不符、
  *         格式版本不符或声明的切片数超出容量预算。
  */
-CompressErr ParseHeader(const std::uint8_t* in, size_t len,
-                        FileHeader* out, std::vector<SliceEntry>* entries) noexcept;
+CompressErr ParseHeader(const std::uint8_t* in, size_t len, FileHeader* out,
+                        std::vector<SliceEntry>* entries) noexcept;
 
 // 读路径快速判定：前 4 字节是否为魔数（「无头即未压缩」的物理含义）。
 bool LooksCompressed(const std::uint8_t* prefix4) noexcept;
