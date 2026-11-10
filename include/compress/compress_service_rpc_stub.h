@@ -19,7 +19,7 @@ class CompressServiceRpcStub {
 
   // 压缩请求调用：同步语义，超时/失败经返回值上抛，由调用方决定重试或放弃
   CompressErr Compress(const ::compress::system::CompressRequest& req,
-                       ::compress::system::CompressResponse* resp);
+                       ::compress::system::CompressResponse* resp) noexcept;
 };
 
 }  // namespace compress

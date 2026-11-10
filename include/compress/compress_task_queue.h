@@ -46,7 +46,7 @@ class CompressTaskQueue {
    * @return true = 取到任务（*out 被移动赋值）；false = out 为 nullptr，
    *              或队列已关闭且存量排干（消费者线程的唯一退出信号）
    */
-  bool Pop(CompressTask* out) {
+  bool Pop(CompressTask* out) noexcept {
     if (out == nullptr) {
       return false;
     }
@@ -65,13 +65,13 @@ class CompressTaskQueue {
    * 关闭不清空存量：消费者继续 Pop 直至取空，此后 Pop 返回 false，线程据此退出。
    * 幂等；与「生产者全部结束 → Close → 消费者排干退出」的关闭协议配套使用。
    */
-  void Close() {
+  void Close() noexcept {
     std::lock_guard<std::mutex> lock(mu_);
     closed_ = true;
     cv_.notify_all();
   }
 
-  std::size_t Size() const {
+  std::size_t Size() const noexcept {
     std::lock_guard<std::mutex> lock(mu_);
     return queue_.size();
   }
