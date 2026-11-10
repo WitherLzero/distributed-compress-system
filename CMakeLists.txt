@@ -8,6 +8,11 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)  # compile_commands.json：clangd / VS Cod
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
+# header-only 公共头（如 compress_task_queue.h）的归属目标：
+# 不产库文件，只传染 include 路径，消费者一律 target_link_libraries(... compress_api)
+add_library(compress_api INTERFACE)
+target_include_directories(compress_api INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}/include")
+
 find_package(Threads REQUIRED)
 find_package(gflags REQUIRED)          # 与 BRPC 同源，配置项解析依赖
 find_package(glog REQUIRED)            # 进程日志：仅带 main() 的二进制使用，库不强制

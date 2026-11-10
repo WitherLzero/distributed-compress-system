@@ -26,3 +26,4 @@ tools/
 # draw.io desktop backup files
 .$*.bkp
 /build/
+/Testing/

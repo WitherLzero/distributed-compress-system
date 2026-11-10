@@ -12,3 +12,9 @@ add_test(NAME codec COMMAND codec_test)
 add_executable(header_test header_test.cc)
 target_link_libraries(header_test PRIVATE compress_meta GTest::gtest GTest::gtest_main)
 add_test(NAME header COMMAND header_test)
+
+# 票 07：header-only 有界任务队列，无项目库依赖；std::thread 需显式链线程库
+find_package(Threads REQUIRED)
+add_executable(task_queue_test task_queue_test.cc)
+target_link_libraries(task_queue_test PRIVATE compress_api GTest::gtest GTest::gtest_main Threads::Threads)
+add_test(NAME task_queue COMMAND task_queue_test)
