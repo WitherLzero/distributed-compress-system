@@ -700,12 +700,13 @@ struct SliceEntry {
 ```cpp
 // ===== compress_client（动态库，嵌入 datanode 宿主进程）=====
 // 对宿主暴露的 C++ 接口（见 6.2，Client 门面经 Pimpl 转发到 ClientCore），内部实现类如下：
-class ClientCore {           // 组合根（Create 装配，Start/Shutdown 管线程生命周期）
+class ClientCore {           // 组合根（Assemble 装配，Start/Shutdown 管线程生命周期）
 public:
-    Result Assemble(const Options& opts);               // 装配以下组件（Options 见 6.2）
-    CompressErr Start();                                // 起扫描/压缩/列表同步线程
+    CompressErr Assemble(const Options& opts) noexcept; // 装配以下组件（Options 见 6.2）
+    CompressErr Start() noexcept;                       // 起扫描/压缩/列表同步线程
     void Shutdown() noexcept;                           // 排空在途任务、join 线程、释放
-    CompressErr Read(path, offset, buf, cap, out_len);  // Read 门面实现，语义对齐 pread
+    CompressErr Read(const char* path, uint64_t offset, char* buf, size_t cap,
+                     size_t* out_len) noexcept;         // Read 门面实现，语义对齐 pread
 };
 
 class ColdScanner {          // 冷数据扫描
@@ -721,8 +722,9 @@ public:
 
 class CompressTaskQueue {    // 客户端任务队列（有界，header-only）
 public:
-    bool Push(CompressTask&& task);      // 队列满则丢弃本轮候选（下轮扫描重扫）
-    bool Pop(CompressTask& out);         // 工作线程阻塞取出
+    bool TryPush(CompressTask task);       // 非阻塞入队；满则拒绝本轮候选（下轮扫描重扫）
+    bool Pop(CompressTask* out) noexcept;  // 工作线程阻塞取出；关闭且排干后返 false（线程退出信号）
+    void Close() noexcept;                 // 关入口、排干存量（优雅关闭协议，见 3.1.4）
 };
 
 class CompressExecutor {     // 压缩工作线程主体
@@ -761,7 +763,7 @@ public:
 
 class WorkerPool {           // 压缩工作线程池
 public:
-    void Submit(Task&& t);               // 深压缩内存预算按预设核算（见 3.3.4）
+    void Submit(::compress::system::CompressRequest&& request); // 任务负载 = 压缩请求（不经中间 Task 包装）；深压缩内存预算按预设核算（见 3.3.4）
 };
 ```
 
