@@ -6,22 +6,24 @@
 
 **Blocked by**: 05、06、07、08。
 
-**Status**: ready-for-agent
+**Status**: completed（2026-11-10）
 
 - [x] 格式化规范文件落地并全库执行一遍
 - [x] `-Wall -Wextra` 全库零警告（含三张前置工票的代码）
 - [x] README：环境依赖（指向环境搭建文档）、一键构建命令、三二进制与动态库的产物说明、目录结构导读
 - [x] WSL 侧干净 clone 从零构建 + 全部测试通过，结果贴回 issue 03
-- [ ] 功能分支合并回主干，提交信息遵循 Conventional Commits
-- [ ] issue 03 Acceptance 六条全绿并关闭，父 issue 状态由学员终审后更新
+- [x] 功能分支合并回主干，提交信息遵循 Conventional Commits
+- [x] issue 03 Acceptance 六条全绿并关闭，父 issue 状态由学员终审后更新
+
+**Status**: completed（2026-11-10：PR #1 reviewer approve + 学员终审后合并回 main（merge commit `7b5b08b`），issue 03 关闭）
 
 ## 设计文档 §7.2 回写清单（评审沉淀，2026-11-10）
 
 代码已先行落地、设计文档滞后的条目，合并前一并回写：
 
-- ClientCore 四方法补 `noexcept`（ADR-0005 四纪律对齐；评审 A3）
-- 任务队列签名 `Push/Pop` → `TryPush/Pop`（代码已按非阻塞语义命名，CP5 落地）
-- `HealthyWorkers()` 命名评估（评审 C1：名字承诺过滤、注释承诺全量；改名如 `AllWorkers`/`Snapshot` 需学员拍板，不改则至少把语义写进方法名注释）
+- ClientCore 四方法补 `noexcept`（ADR-0005 四纪律对齐；评审 A3）→ **已回写**（2026-11-10，随合并后文档收敛轮）
+- 任务队列签名 `Push/Pop` → `TryPush/Pop`（代码已按非阻塞语义命名，CP5 落地）→ **已回写**，并补 `Close()`
+- `HealthyWorkers()` 命名评估（评审 C1：名字承诺过滤、注释承诺全量）→ 注释语义已写明「原样返回全量、不二次过滤」；**改名待学员拍板**（候选：`AllWorkers()`），暂维持现状
 
 ## PR #1 评审台账（系统性双轴评审，2026-11-10）
 

@@ -1,6 +1,6 @@
 # 03 — 工程脚手架与公共/基础类
 
-- **Status**: in-progress
+- **Status**: completed（2026-11-10：验收六条全绿；PR #1 经系统性双轴评审 + 学员终审后合并回 main）
 - **Owner**: 林昕祺（代码在 WSL 侧，agent 经 `wsl.exe -d Ubuntu-22.04` 协助）
 - **依据**: 实习大纲 W3；grilling 共识（2026-11-06 会话：验收线、公共类清单、单测门槛、分支策略、.so/空壳形态、构建系统、质量级别、基础设施形态）
 - **阻塞**: 文件头结构体的落地依赖 issue 02-D 定稿；其余可并行
@@ -27,12 +27,12 @@ WSL 侧仓库具备完整构建链，三个二进制（`compress_master` / `comp
 
 ## Acceptance
 
-- [ ] WSL 侧干净 clone 后一键构建成功，README 写明环境依赖（指向 `docs/research/wsl-build-environment.md`）。
-- [ ] `compress_master` / `compress_server` / `mock_datanode` 三二进制 + `libcompress_client.so` 可编译；二进制启动、等信号、干净退出（启动日志含关键配置项）。
-- [ ] codec / 文件头 / CompressTaskQueue 三个纯逻辑类各有最小 gtest 单测并 `ctest` 通过（codec 覆盖 LZ4/LZMA round-trip）。
-- [ ] proto 冒烟测试通过（替代 `local/env-setup/hello-brpc` 的临时验证，该目录保持不入库）。
-- [ ] `.clang-format` 生效；`-Wall -Wextra` 零警告。
-- [ ] 代码走 `feat/w3-scaffold` 分支，周末合并回 main（Conventional Commits）。
+- [x] WSL 侧干净 clone 后一键构建成功，README 写明环境依赖（指向 `docs/research/wsl-build-environment.md`）。
+- [x] `compress_master` / `compress_server` / `mock_datanode` 三二进制 + `libcompress_client.so` 可编译；二进制启动、等信号、干净退出（启动日志含关键配置项）。
+- [x] codec / 文件头 / CompressTaskQueue 三个纯逻辑类各有最小 gtest 单测并 `ctest` 通过（codec 覆盖 LZ4/LZMA round-trip）。
+- [x] proto 冒烟测试通过（替代 `local/env-setup/hello-brpc` 的临时验证，该目录保持不入库）。
+- [x] `.clang-format` 生效；`-Wall -Wextra` 零警告。
+- [x] 代码走 `feat/w3-scaffold` 分支，周末合并回 main（Conventional Commits）。
 
 ## Out of scope
 
