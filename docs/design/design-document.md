@@ -680,20 +680,26 @@ struct CompressedFileHeader {
     uint8_t  flags;             // 标志位（预留）
     uint32_t slice_count;       // 切片条目数量
     uint64_t origin_block_size; // 原始块长度（完整性校验）
-    char     reserved[108];     // 预留，定长头合计 128B
+    uint64_t compressed_len;    // 压缩数据区总长度（完整性校验）
+    char     reserved[100];     // 预留，定长头合计 128B
 };
 
-// 切片条目 8B/条，紧随定长头集中存放，不与数据交错
+// 切片条目 16B/条，紧随定长头集中存放，不与数据交错
 struct SliceEntry {
-    uint32_t compressed_len;    // 压后长度：解压取数 + 前缀和定位下一条
+    uint64_t compressed_offset; // 压后数据在文件中的绝对偏移：随机读直接定位，O(1)
+                                // （业界通例：RocksDB BlockHandle{offset,size}、Parquet ColumnChunk.file_offset、
+                                //  ZIP central directory；无偏移索引的 LZ4/Zstd frame 只能顺序解压，是反面印证）
+    uint32_t compressed_len;    // 压后长度：取数长度
     uint32_t crc32;             // 切片原始字节的 CRC32：解压后比对，覆盖压缩/网络/解压全链路
                                 // （gzip 式端到端校验；校验压后数据拦不住解压器 bug 的错误输出）
 };
-// 不存的偏移均可推导：origin_offset = 条目序号 × slice_size（定长切片）；
-// compressed_offset = 定长头 + 条目区 + 前序条目 compressed_len 之和（前缀和）。
+// 原始侧偏移不存、恒可推导：origin_offset = 条目序号 × slice_size（定长切片，
+// 尾片原始长度 = origin_block_size − (slice_count−1) × slice_size）；
+// 压缩侧偏移显式存储：压缩后切片长度不定长、无公式可算，前缀和累加定位是 O(N)，违反随机读原则。
+// 一致性自检：offset[i] + len[i] == offset[i+1]，且 S0.offset == 128 + 16 × slice_count。
 ```
 
-64MB 块按 4MB 切片：16 条 × 8B + 128B = **合计 256B**。切片大小 v1 取 4MB（兼顾元信息密度、压缩率与读路径的解压延迟/内存）；格式演进经 `version` 字段（见 8.1）。
+64MB 块按 4MB 切片：16 条 × 16B + 128B = **合计 384B**；4KB 预算内可容纳 **248 条**（(4096−128)/16），对 4MB 切片可支撑块至约 1GB。切片大小 v1 取 4MB（兼顾元信息密度、压缩率与读路径的解压延迟/内存）；格式演进经 `version` 字段（见 8.1）。
 
 ### 7.2 关键类设计（声明，不含实现）
 

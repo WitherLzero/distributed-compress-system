@@ -1,6 +1,6 @@
 # 02 — 文件头切片条目改存 offset：决策重议
 
-- **Status**: needs-triage（待讨论）
+- **Status**: ready-for-agent（决策已定，代码侧变更待实现，见 issue 04）
 - **依据**: `meeting/见识星球 昕棋 软件研发实习第4课.md`（2026-11-14），时间戳 13:58–15:46
 
 ## 背景
@@ -25,10 +25,22 @@
 
 ## Acceptance
 
-- [ ] 新布局字段表定稿（含条目宽度、4KB 预算重核算）
+- [x] 新布局字段表定稿（含条目宽度、4KB 预算重核算）
 - [ ] issue 02-D 与 issue 06 回填
 - [ ] ADR 或决策记录落盘
 - [ ] GLOSSARY 同步
 
 ## Comments
 
+
+### 2026-11-16 决策：方案 A（offset + size 双存）
+
+定稿为业界通例形态（RocksDB BlockHandle 式）：
+
+- `CompressedFileHeader` 128B 不变，新增 `compressed_len`（u64，压缩数据区总长，取自 reserved）；
+- `SliceEntry` 16B/条 = `compressed_offset`(u64) + `compressed_len`(u32) + `crc32`(u32)：随机读 O(1)，crc 天然入条目且 8B 对齐；
+- 4KB 合计预算重核算：容量 248 条（(4096−128)/16），64MB 块 @4MB 切片 = 384B，可支撑块至约 1GB；
+- `origin_offset` 维持不存：定长切片恒为 序号 × slice_size，尾片长由 `origin_block_size` 推导，删除决定不受第 4 课翻案影响；
+- 备选方案 B（仅存 offset 8B/条、容量 496 条）因 crc 无处安放（破坏 8B 条目形状）而弃选。
+
+已落 `docs/design/design-document.md` §7.1；代码侧（`meta_header` 布局与单测，WSL 侧）变更记录于 issue 04，暂不动代码。
