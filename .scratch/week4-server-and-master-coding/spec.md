@@ -10,7 +10,7 @@
 两条线并行：
 
 1. **第 4 课反馈落地**：导师对设计文档（v0.3）与 W3 已交付代码的反馈逐条处理（issue 01），其中**文件头切片条目改存 offset** 推翻了 issue 02-D 的定稿决策，需单独立项重新定稿（issue 02）；代码类反馈（接口返回值/参数类型/memset 契约/temp 目录）走一张实现票（issue 03）。
-2. **Server / Master 编码**：按大纲推进 server 端核心逻辑与 master 端注册表/判死/健康下发（导师定调：先把通信搞通，后面 debug 才好弄；先 server 还是 client 都可）。具体工票待反馈落地后与学员切分。
+2. **Server / Master 编码（本周里程碑）**：与学员对齐后的定稿口径——**本周 Server 与 Master 两个模块 100% 完成，不向 W5 留尾巴**；Client 模块一行不动（仅测试 harness 验证 Master 查询接口）。执行顺序：D1 契约收敛（issue 03/04）→ D2-3 Master 全部 → D3-4 Server 全部（真压缩端点，codec 现成不留占位）→ D5 多实例联调 + 全量单测 + push。
 
 ## Deliverables
 
@@ -19,21 +19,28 @@
 | 第 4 课反馈清单逐条处理 | 设计文档 + GLOSSARY + 本目录 issue | ⬜ issue 01 |
 | 文件头 offset 决策重新定稿 | issue 02-D 结论修订 + issue 06 + 视情况新 ADR | ⬜ issue 02（待讨论） |
 | codec 接口与序列化代码修订 | WSL 侧 `src/common/`，`feat/` 分支 | ⬜ issue 03 |
-| server / master 可执行二进制 | WSL 侧（大纲 W4 交付物） | ⬜ 待切票 |
+| server / master 可执行二进制 | WSL 侧（大纲 W4 交付物） | ⬜ issue 05 / 06 |
+| Master-Server 多实例联调脚本 | WSL 侧 `scripts/`：拉起/杀死多个 server 实例，验证注册→心跳→判死→列表流转 | ⬜ issue 07 |
+| Client 测试 harness（无业务） | gtest/CLI：GetWorkersInfo 断言实例列表；收发一次真压缩往返 | ⬜ 随 issue 07 |
 
 ## Acceptance
 
 - 第 4 课反馈无残留：issue 01 逐条勾验（含扫描周期调整、X time 命名确认、流控表述确认）。
 - offset 决策有明确结论并回填 issue 02-D / issue 06 相关表述（issue 02）。
 - codec 单测全绿且覆盖新的返回值契约（issue 03）。
-- W4 大纲交付物：server 与 master 二进制可编译、可启动（具体验收线切票时定）。
+- W4 大纲交付物：server 与 master 二进制可编译、可启动，且两模块功能完成度 100%（验收线见 issue 05/06 各自 Acceptance）。
+- **Master 完成定义**：注册→心跳刷新→判死扫描出列表→查询原样返回注册表全量（不排序不指定，选点在 client 侧随机），四态流转有单测覆盖；注册表不持久化，重启靠心跳自动重建。
+- **Server 完成定义**：启动注册 + 周期心跳对真 master 验证；Compress RPC 真 LZ4 压缩端点（收 attachment → codec → 返回结果 + compressed_len），round-trip 单测背书；worker 线程池入队即拒绝（ELIMIT）。
+- 多实例联调：脚本可拉起 N 个 server、杀死任意一个，master 列表在判死阈值内同步收缩（issue 07）。
 
 ## Out of scope
 
 - client 侧扫描/执行/回写业务逻辑填肉（W5）。
 - 分布式流控（导师确认线上系统需专门团队，本期不实现；单机流控维持"文档写、实现可选"）。
 - 监控打点（导师：不用搞，就是打点）。
-- 三方联调（W5）。
+- 三方联调（W5）——本周的联调仅限 Master↔Server 双方 + 测试 harness，不涉及 Client 业务模块。
+- Client 模块业务逻辑（扫描/队列/压缩流程/解压读路径）一行不动（W5）。
+- 选点逻辑不落 Master：master 全量返回 WorkersInfo、client 随机自选（设计文档 §3.2.3/§6 proto 注释已定），本周无 client，故无可做项。
 
 ## Key constraints
 
@@ -51,4 +58,8 @@
 |---|---|---|
 | 01 | 第 4 课反馈——可直接处理项 | needs-triage |
 | 02 | 文件头切片条目改存 offset——决策重议 | needs-triage（待讨论） |
-| 03 | codec 接口返回值与序列化契约修订 | needs-triage |
+| 03 | codec 接口返回值与序列化契约修订 | ready-for-agent |
+| 04 | 文件头 16B 条目——代码侧同步 | ready-for-agent |
+| 05 | Master 模块编码（注册表/判死扫描/查询下发） | ready-for-agent（依赖 03/04） |
+| 06 | Server 模块编码（注册心跳/真压缩端点/线程池） | ready-for-agent（依赖 03/04） |
+| 07 | Master-Server 多实例联调脚本 | ready-for-agent（依赖 05/06） |
