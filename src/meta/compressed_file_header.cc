@@ -31,7 +31,21 @@ CompressErr SerializeHeader(const FileHeader& header, const SliceEntry* entries,
     return CompressErr::kBufSmall;
   }
 
-  std::memcpy(out, &header, kFixedHeaderSize);
+  // 确定性（双保险）：
+  // 1) out 先清零写入区——被 copy 之前 memset 过（避免残留旧数据进输出）；
+  // 2) 值初始化本地副本只搬语义字段——调用方结构体的 reserved 与对齐洞里的
+  //    malloc 垃圾不得进入输出（同输入两次序列化逐字节相同）。
+  std::memset(out, 0, need);
+  FileHeader clean{};
+  std::memcpy(clean.magic, header.magic, sizeof(clean.magic));
+  clean.format_version = header.format_version;
+  clean.algorithm = header.algorithm;
+  clean.flags = header.flags;
+  clean.slice_count = header.slice_count;
+  clean.origin_block_size = header.origin_block_size;
+  clean.compressed_len = header.compressed_len;
+
+  std::memcpy(out, &clean, kFixedHeaderSize);
   if (slice_count > 0) {
     std::memcpy(out + kFixedHeaderSize, entries,
                 static_cast<size_t>(slice_count) * kSliceEntrySize);
@@ -75,13 +89,19 @@ std::uint64_t DataRegionOffset(std::uint32_t slice_count) noexcept {
   return SerializedHeaderSize(slice_count);
 }
 
-std::uint64_t CompressedOffset(const std::vector<SliceEntry>& entries,
-                               std::uint32_t slice_index) noexcept {
-  std::uint64_t off = DataRegionOffset(static_cast<std::uint32_t>(entries.size()));
-  for (std::uint32_t i = 0; i < slice_index && i < entries.size(); ++i) {
-    off += entries[i].compressed_len;
+CompressErr ValidateEntryChain(const std::vector<SliceEntry>& entries) noexcept {
+  const std::uint64_t expect_first = DataRegionOffset(static_cast<std::uint32_t>(entries.size()));
+  if (!entries.empty() && entries.front().compressed_offset != expect_first) {
+    return CompressErr::kInvalidArg;
   }
-  return off;
+  for (size_t i = 0; i + 1 < entries.size(); ++i) {
+    const std::uint64_t next_expect =
+        entries[i].compressed_offset + entries[i].compressed_len;
+    if (next_expect != entries[i + 1].compressed_offset) {
+      return CompressErr::kInvalidArg;
+    }
+  }
+  return CompressErr::kOk;
 }
 
 }  // namespace compress

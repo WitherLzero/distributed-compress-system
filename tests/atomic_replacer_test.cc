@@ -1,9 +1,10 @@
-// 票 08：AtomicReplacer 单测（issue 03 承诺的 replacer 单测补落）。
-// 验证契约：同目录临时文件 → fsync+rename 原子替换；未 Commit 的析构/Abort 不留半成品。
+// AtomicReplacer 单测。验证契约：同卷专用临时目录（默认 <目标目录>/.tmp/）→
+// fsync+rename 原子替换；未 Commit 的析构/Abort 不留半成品；跨卷临时目录 Open 即拒绝。
 #include "compress/atomic_replacer.h"
 
 #include <fcntl.h>
 #include <gtest/gtest.h>
+#include <sys/stat.h>
 #include <unistd.h>
 
 #include <cstdio>
@@ -73,8 +74,9 @@ TEST(AtomicReplacerTest, CommitReplacesTarget) {
   WriteAll(replacer.Fd(), "new_compressed_payload");
   ASSERT_EQ(replacer.Commit(), CompressErr::kOk);
 
-  EXPECT_EQ(ReadAll(target), "new_compressed_payload");  // 目标已被替换
-  EXPECT_EQ(FileCount(dir.path()), 1u);                  // 无临时文件残留
+  EXPECT_EQ(ReadAll(target), "new_compressed_payload");        // 目标已被替换
+  EXPECT_EQ(FileCount(dir.path() / ".tmp"), 0u);               // 临时文件已搬走
+  EXPECT_EQ(FileCount(dir.path()), 2u);                        // 目标 + .tmp 目录本体
 }
 
 TEST(AtomicReplacerTest, CommitWithoutOpenFails) {
@@ -101,8 +103,8 @@ TEST(AtomicReplacerTest, AbortRemovesTempAndKeepsTarget) {
   WriteAll(replacer.Fd(), "half_written_garbage");
   replacer.Abort();
 
-  EXPECT_EQ(ReadAll(target), "original");  // 目标原样未动
-  EXPECT_EQ(FileCount(dir.path()), 1u);    // 临时文件已清除
+  EXPECT_EQ(ReadAll(target), "original");       // 目标原样未动
+  EXPECT_EQ(FileCount(dir.path() / ".tmp"), 0u);  // 临时文件已清除
 }
 
 TEST(AtomicReplacerTest, DestructorAbortsUncommitted) {
@@ -114,8 +116,8 @@ TEST(AtomicReplacerTest, DestructorAbortsUncommitted) {
     WriteAll(replacer.Fd(), "uncommitted");
     // 不 Commit 不 Abort，直接出作用域：RAII 兜底清理
   }
-  EXPECT_FALSE(fs::exists(target));      // 目标从未被触碰
-  EXPECT_EQ(FileCount(dir.path()), 0u);  // 连目标带临时文件都不留
+  EXPECT_FALSE(fs::exists(target));             // 目标从未被触碰
+  EXPECT_EQ(FileCount(dir.path() / ".tmp"), 0u);  // 半成品已清除
 }
 
 TEST(AtomicReplacerTest, OpenInMissingDirFails) {
@@ -138,6 +140,63 @@ TEST(AtomicReplacerTest, ReopenAfterCommitCleansUp) {
     WriteAll(replacer.Fd(), "round2");
     // 新一轮不 Commit 不 Abort，直接出作用域。
   }
-  EXPECT_EQ(FileCount(dir.path()), 1u);  // 只有 round1 落盘的目标，无临时文件残留
+  EXPECT_EQ(FileCount(dir.path() / ".tmp"), 0u);  // 新一轮半成品无残留
+  EXPECT_EQ(FileCount(dir.path()), 2u);           // round1 落盘的目标 + .tmp 本体
   EXPECT_EQ(ReadAll(target), "round1");
+}
+
+// temp 目录隔离（issue 03 第 6 项）：默认 .tmp 目录被使用；Abort 后目标目录本体
+// 除 .tmp 外永远干净——扫描器/其他工具不见半成品。
+TEST(AtomicReplacerTest, TempDirIsolatesHalfProducts) {
+  TempDir dir;
+  const fs::path target = dir.path() / "blk_101";
+
+  AtomicReplacer replacer(target.string());
+  ASSERT_EQ(replacer.Open(), CompressErr::kOk);
+  WriteAll(replacer.Fd(), "in_progress");
+
+  // 写入中：半成品只在 .tmp 内，目标目录本体与目标路径均不受污染。
+  EXPECT_FALSE(fs::exists(target));
+  EXPECT_EQ(FileCount(dir.path() / ".tmp"), 1u);
+  EXPECT_EQ(FileCount(dir.path()), 1u);  // 只有 .tmp 目录本体
+
+  replacer.Abort();
+  EXPECT_EQ(FileCount(dir.path() / ".tmp"), 0u);  // 失败清理 = 半成品归零
+}
+
+// 显式指定同卷临时目录：Open/Commit 正常工作。
+TEST(AtomicReplacerTest, ExplicitSameVolumeTempDirWorks) {
+  TempDir dir;
+  const fs::path target = dir.path() / "blk_101";
+  const fs::path tmp = dir.path() / ".scratch-tmp";
+
+  AtomicReplacer replacer(target.string(), tmp.string());
+  ASSERT_EQ(replacer.Open(), CompressErr::kOk);
+  WriteAll(replacer.Fd(), "payload");
+  ASSERT_EQ(replacer.Commit(), CompressErr::kOk);
+
+  EXPECT_EQ(ReadAll(target), "payload");  // 同卷显式目录 → rename 可达
+  EXPECT_EQ(FileCount(tmp), 0u);          // 临时文件已搬走
+}
+
+// 跨卷拒绝：临时目录与目标不在同一文件系统（st_dev 不同）→ Open 直接 kIo，
+// rename 的 EXDEV 约束被提前拦截。用 /dev/shm（tmpfs）模拟另一文件系统；
+// 环境无 tmpfs 挂点或恰好同卷时跳过（被测前提不成立，非行为失败）。
+TEST(AtomicReplacerTest, CrossVolumeTempDirRejected) {
+  struct stat shm {};
+  if (::stat("/dev/shm", &shm) != 0) {
+    GTEST_SKIP() << "/dev/shm unavailable";
+  }
+  TempDir dir;
+  struct stat here {};
+  ASSERT_EQ(::stat(dir.path().c_str(), &here), 0);
+  if (shm.st_dev == here.st_dev) {
+    GTEST_SKIP() << "/dev/shm is on the same filesystem (no tmpfs separator)";
+  }
+
+  const fs::path target = dir.path() / "blk_101";
+  AtomicReplacer replacer(target.string(), "/dev/shm");
+  EXPECT_EQ(replacer.Open(), CompressErr::kIo);  // 跨卷 fail-fast
+  EXPECT_EQ(replacer.Fd(), -1);                  // 未产生任何临时文件
+  EXPECT_FALSE(fs::exists(target));
 }

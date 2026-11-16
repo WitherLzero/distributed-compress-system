@@ -11,6 +11,8 @@ struct Options {
   std::string master_addr = "127.0.0.1:8001";  // master 地址
   int scan_interval_sec = 30;                  // 冷数据扫描周期
   double min_saving_ratio = 0.10;  // 整块节省率阈值，低于则放弃压缩（§5.4）
+  std::string temp_dir;            // AtomicReplacer 临时目录；空 = <目标目录>/.tmp/。
+                                   // 须与目标文件同卷（st_dev 校验，跨卷 Open 即拒绝）
 };
 
 }  // namespace compress

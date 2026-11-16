@@ -1,4 +1,5 @@
-// 票 06：统一编解码封装单测。round-trip 断言逐字节相等。
+// 统一编解码封装单测。round-trip 断言逐字节相等。
+// 契约：返回值 = CompressErr 错误码；成功后读 *out_len；kBufSmall 时 *out_len 带回所需容量。
 #include "compress/codec.h"
 
 #include <gtest/gtest.h>
@@ -50,20 +51,15 @@ TEST_P(CodecContractTest, RandomInputRoundTrip) {
   std::unique_ptr<compress::ICodec> codec = MakeCodec(GetParam());
 
   std::vector<std::uint8_t> compressed(cap);
-  size_t out_len = 0;
-  compress::CompressErr err = compress::CompressErr::kOk;
-  const size_t n =
-      codec->Compress(input.data(), input.size(), compressed.data(), cap, &out_len, &err);
-  ASSERT_EQ(err, compress::CompressErr::kOk);
+  size_t n = 0;
+  ASSERT_EQ(codec->Compress(input.data(), input.size(), compressed.data(), cap, &n),
+            compress::CompressErr::kOk);
   ASSERT_GT(n, 0u);
 
   std::vector<std::uint8_t> restored(input.size());
   size_t restored_len = 0;
-  err = compress::CompressErr::kOk;
-  const size_t rn = codec->Decompress(compressed.data(), n, restored.data(), restored.size(),
-                                      &restored_len, &err);
-  ASSERT_EQ(err, compress::CompressErr::kOk);
-  ASSERT_EQ(rn, input.size());
+  ASSERT_EQ(codec->Decompress(compressed.data(), n, restored.data(), restored.size(), &restored_len),
+            compress::CompressErr::kOk);
   ASSERT_EQ(restored_len, input.size());
   EXPECT_EQ(restored, input);  // 逐字节相等
 }
@@ -74,40 +70,32 @@ TEST_P(CodecContractTest, RepetitiveInputRoundTrip) {
 
   std::vector<std::uint8_t> compressed(input.size() * 2);
   size_t n = 0;
-  compress::CompressErr err = compress::CompressErr::kOk;
-  n = codec->Compress(input.data(), input.size(), compressed.data(), compressed.size(), &n, &err);
-  ASSERT_EQ(err, compress::CompressErr::kOk);
+  ASSERT_EQ(codec->Compress(input.data(), input.size(), compressed.data(), compressed.size(), &n),
+            compress::CompressErr::kOk);
 
   std::vector<std::uint8_t> restored(input.size());
   size_t got = 0;
-  err = compress::CompressErr::kOk;
-  const size_t rn =
-      codec->Decompress(compressed.data(), n, restored.data(), restored.size(), &got, &err);
-  ASSERT_EQ(err, compress::CompressErr::kOk);
+  EXPECT_EQ(codec->Decompress(compressed.data(), n, restored.data(), restored.size(), &got),
+            compress::CompressErr::kOk);
   EXPECT_EQ(restored, input);
-  EXPECT_EQ(rn, input.size());
+  EXPECT_EQ(got, input.size());
 }
 
 TEST_P(CodecContractTest, CompressSmallBufferReportsNeededSize) {
-  // kBufSmall 契约：*out_len 带回所需容量，扩容重调一次即成功。
+  // kBufSmall 契约：返回错误码，*out_len 带回所需容量，扩容重调一次即成功。
   // 压缩侧容量 = 调用方（server/压缩任务）按纪律给的缓冲，与解压侧语义不同。
   const std::vector<std::uint8_t> input = RepetitiveBytes(1 << 20);
   std::unique_ptr<compress::ICodec> codec = MakeCodec(GetParam());
 
   std::vector<std::uint8_t> tiny(16);
   size_t need = 0;
-  compress::CompressErr err = compress::CompressErr::kOk;
-  const size_t n =
-      codec->Compress(input.data(), input.size(), tiny.data(), tiny.size(), &need, &err);
-  EXPECT_EQ(n, 0u);
-  EXPECT_EQ(err, compress::CompressErr::kBufSmall);
+  EXPECT_EQ(codec->Compress(input.data(), input.size(), tiny.data(), tiny.size(), &need),
+            compress::CompressErr::kBufSmall);
   EXPECT_GT(need, tiny.size());
 
   std::vector<std::uint8_t> enough(need);
-  err = compress::CompressErr::kOk;
-  EXPECT_GT(codec->Compress(input.data(), input.size(), enough.data(), enough.size(), &need, &err),
-            0u);
-  EXPECT_EQ(err, compress::CompressErr::kOk);
+  EXPECT_EQ(codec->Compress(input.data(), input.size(), enough.data(), enough.size(), &need),
+            compress::CompressErr::kOk);
 }
 
 TEST_P(CodecContractTest, CorruptDataFails) {
@@ -118,16 +106,15 @@ TEST_P(CodecContractTest, CorruptDataFails) {
 
   std::vector<std::uint8_t> compressed(input.size() * 2);
   size_t n = 0;
-  compress::CompressErr err = compress::CompressErr::kOk;
-  n = codec->Compress(input.data(), input.size(), compressed.data(), compressed.size(), &n, &err);
-  ASSERT_EQ(err, compress::CompressErr::kOk);
+  ASSERT_EQ(codec->Compress(input.data(), input.size(), compressed.data(), compressed.size(), &n),
+            compress::CompressErr::kOk);
 
   compressed[n / 2] ^= 0xFF;
   std::vector<std::uint8_t> out(input.size());
   size_t got = 0;
-  err = compress::CompressErr::kOk;
-  const size_t rn = codec->Decompress(compressed.data(), n, out.data(), out.size(), &got, &err);
-  EXPECT_TRUE(err != compress::CompressErr::kOk || rn != input.size() || out != input);
+  const compress::CompressErr e =
+      codec->Decompress(compressed.data(), n, out.data(), out.size(), &got);
+  EXPECT_TRUE(e != compress::CompressErr::kOk || got != input.size() || out != input);
 }
 
 TEST_P(CodecContractTest, EmptyInputRejected) {
@@ -136,14 +123,11 @@ TEST_P(CodecContractTest, EmptyInputRejected) {
   std::unique_ptr<compress::ICodec> codec = MakeCodec(GetParam());
   std::vector<std::uint8_t> buf(64);
   size_t n = 0;
-  compress::CompressErr err = compress::CompressErr::kOk;
 
-  EXPECT_EQ(codec->Compress(buf.data(), 0, buf.data(), buf.size(), &n, &err), 0u);
-  EXPECT_EQ(err, compress::CompressErr::kInvalidArg);
-
-  err = compress::CompressErr::kOk;
-  EXPECT_EQ(codec->Decompress(buf.data(), 0, buf.data(), buf.size(), &n, &err), 0u);
-  EXPECT_EQ(err, compress::CompressErr::kInvalidArg);
+  EXPECT_EQ(codec->Compress(buf.data(), 0, buf.data(), buf.size(), &n),
+            compress::CompressErr::kInvalidArg);
+  EXPECT_EQ(codec->Decompress(buf.data(), 0, buf.data(), buf.size(), &n),
+            compress::CompressErr::kInvalidArg);
 }
 
 TEST_P(CodecContractTest, NullArgsRejected) {
@@ -151,22 +135,37 @@ TEST_P(CodecContractTest, NullArgsRejected) {
   std::unique_ptr<compress::ICodec> codec = MakeCodec(GetParam());
   std::uint8_t buf[16] = {};
   size_t n = 0;
-  compress::CompressErr err = compress::CompressErr::kOk;
 
-  EXPECT_EQ(codec->Compress(nullptr, 8, buf, sizeof(buf), &n, &err), 0u);
-  EXPECT_EQ(err, compress::CompressErr::kInvalidArg);
-  EXPECT_EQ(codec->Decompress(nullptr, 8, buf, sizeof(buf), &n, &err), 0u);
-  EXPECT_EQ(err, compress::CompressErr::kInvalidArg);
+  EXPECT_EQ(codec->Compress(nullptr, 8, buf, sizeof(buf), &n), compress::CompressErr::kInvalidArg);
+  EXPECT_EQ(codec->Decompress(nullptr, 8, buf, sizeof(buf), &n),
+            compress::CompressErr::kInvalidArg);
 
   const std::vector<std::uint8_t> input = RepetitiveBytes(1024);
   std::vector<std::uint8_t> compressed(4096);
-  err = compress::CompressErr::kOk;
-  ASSERT_GT(
-      codec->Compress(input.data(), input.size(), compressed.data(), compressed.size(), &n, &err),
-      0u);
-  err = compress::CompressErr::kOk;
-  EXPECT_EQ(codec->Decompress(compressed.data(), n, nullptr, 1024, &n, &err), 0u);
-  EXPECT_EQ(err, compress::CompressErr::kInvalidArg);
+  ASSERT_EQ(codec->Compress(input.data(), input.size(), compressed.data(), compressed.size(), &n),
+            compress::CompressErr::kOk);
+  EXPECT_EQ(codec->Decompress(compressed.data(), n, nullptr, 1024, &n),
+            compress::CompressErr::kInvalidArg);
+}
+
+TEST_P(CodecContractTest, OutBufferBeyondOutLenUnspecifiedNotLeaked) {
+  // 写入契约：被调方只保证前 out_len 字节；[out_len, out_cap) 未指定。
+  // 行为证据：预填哨兵后压缩，区域内容允许被写（未指定），但 round-trip 只读前段不受影响。
+  const std::vector<std::uint8_t> input = RepetitiveBytes(64 * 1024);
+  std::unique_ptr<compress::ICodec> codec = MakeCodec(GetParam());
+
+  std::vector<std::uint8_t> compressed(input.size() * 2, 0xAA);  // 哨兵填充
+  size_t n = 0;
+  ASSERT_EQ(codec->Compress(input.data(), input.size(), compressed.data(), compressed.size(), &n),
+            compress::CompressErr::kOk);
+  ASSERT_GT(n, 0u);
+  ASSERT_LT(n, compressed.size());  // 压缩有效：tail 区存在
+
+  std::vector<std::uint8_t> restored(input.size());
+  size_t got = 0;
+  ASSERT_EQ(codec->Decompress(compressed.data(), n, restored.data(), restored.size(), &got),
+            compress::CompressErr::kOk);
+  EXPECT_EQ(restored, input);
 }
 
 }  // namespace
@@ -186,41 +185,35 @@ TEST(CodecFactoryTest, ShallowTradesRatioForCpu) {
 
   std::vector<std::uint8_t> a(input.size() * 2), b(input.size() * 2);
   size_t al = 0, bl = 0;
-  compress::CompressErr ae = compress::CompressErr::kOk, be = compress::CompressErr::kOk;
-  const size_t an = shallow->Compress(input.data(), input.size(), a.data(), a.size(), &al, &ae);
-  const size_t bn = deep->Compress(input.data(), input.size(), b.data(), b.size(), &bl, &be);
-  ASSERT_EQ(ae, compress::CompressErr::kOk);
-  ASSERT_EQ(be, compress::CompressErr::kOk);
-  EXPECT_LT(an, input.size() / 2);  // 重复文本浅压至少省一半
-  EXPECT_GT(an, bn);                // 浅压比率劣于深压 = 用空间换 CPU
+  ASSERT_EQ(shallow->Compress(input.data(), input.size(), a.data(), a.size(), &al),
+            compress::CompressErr::kOk);
+  ASSERT_EQ(deep->Compress(input.data(), input.size(), b.data(), b.size(), &bl),
+            compress::CompressErr::kOk);
+  EXPECT_LT(al, input.size() / 2);  // 重复文本浅压至少省一半
+  EXPECT_GT(al, bl);                // 浅压比率劣于深压 = 用空间换 CPU
 }
 
 TEST(CodecTest, Lz4DecompressSmallBufferReportsSize) {
-  // 【W3 功能验证用例】解压侧容量不足 → kBufSmall 报所需容量。
-  // 注意：真实读路径的期望大小来自文件头 origin_block_size（issue 02-D），
-  // 不依赖 codec 特性；此用例验证编解码层自身契约，W5 接入文件头后语义需按设计文档复核。
-  // LZMA 侧暂缓：xz 格式的原始大小在流尾索引，one-shot API 不暴露，同理归 W5。
+  // 解压侧容量不足 → kBufSmall，*out_len 报所需容量（LZ4 帧 contentSize 精确报出）。
+  // 真实读路径的期望大小来自文件头 origin_block_size，不依赖 codec 特性；
+  // LZMA 侧暂缓：xz 格式的原始大小在流尾索引，one-shot API 不暴露。
   const std::vector<std::uint8_t> input = RepetitiveBytes(1 << 20);
   std::unique_ptr<compress::ICodec> codec =
       compress::CodecFactory::Create(compress::CompressLevel::kShallow);
 
   std::vector<std::uint8_t> compressed(input.size() * 2);
   size_t n = 0;
-  compress::CompressErr err = compress::CompressErr::kOk;
-  n = codec->Compress(input.data(), input.size(), compressed.data(), compressed.size(), &n, &err);
-  ASSERT_EQ(err, compress::CompressErr::kOk);
+  ASSERT_EQ(codec->Compress(input.data(), input.size(), compressed.data(), compressed.size(), &n),
+            compress::CompressErr::kOk);
 
   std::vector<std::uint8_t> half(input.size() / 2);
   size_t need = 0;
-  err = compress::CompressErr::kOk;
-  const size_t rn = codec->Decompress(compressed.data(), n, half.data(), half.size(), &need, &err);
-  EXPECT_EQ(rn, 0u);
-  EXPECT_EQ(err, compress::CompressErr::kBufSmall);
+  EXPECT_EQ(codec->Decompress(compressed.data(), n, half.data(), half.size(), &need),
+            compress::CompressErr::kBufSmall);
   EXPECT_EQ(need, input.size());  // LZ4 帧 contentSize 精确报出
 
   std::vector<std::uint8_t> enough(need);
-  err = compress::CompressErr::kOk;
-  EXPECT_EQ(codec->Decompress(compressed.data(), n, enough.data(), enough.size(), &need, &err),
-            input.size());
-  EXPECT_EQ(err, compress::CompressErr::kOk);
+  EXPECT_EQ(codec->Decompress(compressed.data(), n, enough.data(), enough.size(), &need),
+            compress::CompressErr::kOk);
+  EXPECT_EQ(need, input.size());
 }
