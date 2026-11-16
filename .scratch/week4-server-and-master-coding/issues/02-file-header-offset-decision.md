@@ -26,9 +26,9 @@
 ## Acceptance
 
 - [x] 新布局字段表定稿（含条目宽度、4KB 预算重核算）
-- [ ] issue 02-D 与 issue 06 回填
-- [ ] ADR 或决策记录落盘
-- [ ] GLOSSARY 同步
+- [x] issue 02-D 与 issue 06 回填
+- [x] ADR 或决策记录落盘（ADR-0006）
+- [x] GLOSSARY 同步
 
 ## Comments
 
