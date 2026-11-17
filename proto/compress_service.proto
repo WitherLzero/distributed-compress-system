@@ -1,8 +1,10 @@
 // 内部接口 IDL —— 设计文档 §6.1 的单一事实源。
 // 三对消息族：client↔master 查询、server↔master 心跳注册、client↔server 压缩。
 // 数据本体经 RPC 附件传输，消息只带元信息（§6.1.3）。
-// 生成：构建期 protoc --cpp_out，产物不入库。service 桩（protoc-gen-brpc）属 W5。
+// 生成：构建期 protoc --cpp_out，产物不入库。service 桩由 cc_generic_services 生成。
 syntax = "proto3";
+
+option cc_generic_services = true;   // 生成 C++ Service/Stub 基类（BRPC 直接消费）
 
 package compress.system;
 
