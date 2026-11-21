@@ -10,7 +10,7 @@
 
 **Status:** ready-for-agent
 
-- [ ] registry 单测覆盖 注册→心跳刷新→查询→判死移除 四态流转
+- [x] registry 单测覆盖 注册→心跳刷新→查询→判死移除 四态流转
 - [ ] 判死扫描单测：构造超时条目，扫描后消失；未超时条目保留
 - [ ] GetWorkersInfo 从真 BRPC 查询返回含已注册实例的列表
 - [ ] master 进程 Ctrl-C 优雅退出，BRPC 句柄生命周期合规（controller 不得提前释放）
