@@ -4,4 +4,4 @@ add_executable(compress_server
     heartbeat_reporter.cpp     # 票 08 骨架
     worker_pool.cpp            # 票 08 骨架
 )
-target_link_libraries(compress_server PRIVATE compress_common)
+target_link_libraries(compress_server PRIVATE compress_common glog)

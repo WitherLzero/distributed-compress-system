@@ -34,7 +34,7 @@ target_include_directories(death_scanner_test PRIVATE ../src/master)
 target_link_libraries(death_scanner_test PRIVATE BRPC::brpc GTest::gtest GTest::gtest_main Threads::Threads)
 add_test(NAME death_scanner COMMAND death_scanner_test)
 
-# CP0：BRPC 通信链路冒烟（同进程 server+client，验证 Heartbeat 收发）
+# CP3：BRPC 服务端填肉——端到端列表流转（注册→出现→刷新→TTL 消失）
 add_executable(master_smoke_test master_smoke_test.cc)
-target_link_libraries(master_smoke_test PRIVATE compress_proto BRPC::brpc GTest::gtest GTest::gtest_main)
+target_link_libraries(master_smoke_test PRIVATE master_core GTest::gtest GTest::gtest_main)
 add_test(NAME master_smoke COMMAND master_smoke_test)

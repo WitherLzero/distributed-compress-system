@@ -12,8 +12,12 @@
 
 - [x] registry 单测覆盖 注册→心跳刷新→查询→判死移除 四态流转
 - [x] 判死扫描单测：构造超时条目，扫描后消失；未超时条目保留（另有 Stop 及时性与并发压力用例）
-- [ ] GetWorkersInfo 从真 BRPC 查询返回含已注册实例的列表
-- [ ] master 进程 Ctrl-C 优雅退出，BRPC 句柄生命周期合规（controller 不得提前释放）
-- [ ] `ctest` 全绿，`-Wall -Wextra` 零警告
+- [x] GetWorkersInfo 从真 BRPC 查询返回含已注册实例的列表
+- [x] master 进程 Ctrl-C 优雅退出，BRPC 句柄生命周期合规（controller 不得提前释放）
+- [x] `ctest` 全绿，`-Wall -Wextra` 零警告
+
+**同步义务（遗留记录）：**
+- `max_concurrency`（查询 64 / 心跳 256）为算账推定值，联调期按 storm 实测标定后回填注释。
+- proto `WorkerInfo` 字段与 `server_registry.h` 内部结构为手工同步，proto 变更时必须同步更新 registry/service 两侧。
 
 **已知构建约束（欠账）：** TSAN 构建不得链接 glog——brpc 以 WITH_GLOG=OFF 构建（内嵌 butil 注册 `-v`），与系统 glog 的 `-v` 双重注册导致 main 之前 abort；已实证不含 glog 的 TSAN 构建可正常运行（registry/scanner 测试零报告）。长期解法二选一：brpc 重装为 WITH_GLOG=ON，或为纯 std 组件建立不含 BRPC 链接的最小 TSAN 测试 target。

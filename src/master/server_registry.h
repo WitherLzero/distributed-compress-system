@@ -5,6 +5,7 @@
 #include <bvar/bvar.h>
 
 #include <cstdint>
+#include <functional>
 #include <shared_mutex>
 #include <string>
 #include <unordered_map>
@@ -12,10 +13,18 @@
 
 namespace compress {
 
+// 事件时间源（毫秒）。生产传真实时钟；测试传假时钟——时间即测试输入数据。
+// 统一在此别名（registry/scanner/service 三处共用同一类型）。
+using Clock = std::function<std::int64_t()>;
+
 struct WorkerInfo {
-  std::string endpoint;                // 实例地址；注册 = 首次心跳 upsert
+  std::string endpoint;                // 实例标识（server_id）；注册 = 首次心跳 upsert
+  std::string ip;                      // 心跳连接的来源地址（remote_side），观测用
+  std::int32_t port = 0;               // 实例自身服务端口（心跳上报）
+  std::uint32_t cpu_percent = 0;       // 负载字段：随心跳入表、随列表下发（策略演进备用）
+  std::uint32_t mem_percent = 0;
+  std::uint32_t queue_len = 0;
   std::int64_t last_heartbeat_ms = 0;  // 最近心跳时间戳：判死的唯一依据
-  // 负载字段（queue_len/cpu/mem，心跳上报 §6.1）随 W4 补充
 };
 
 class ServerRegistry {

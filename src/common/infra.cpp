@@ -1,7 +1,6 @@
 #include "compress/infra.h"
 
 #include <gflags/gflags.h>
-#include <glog/logging.h>
 
 #include <chrono>
 #include <csignal>
@@ -9,11 +8,8 @@
 
 namespace compress {
 
-void InitInfra(int* argc, char*** argv) {
+void InitFlags(int* argc, char*** argv) {
   gflags::ParseCommandLineFlags(argc, argv, true);
-  google::InitGoogleLogging((*argv)[0]);
-  google::InstallFailureSignalHandler();  // 崩溃栈追踪，联调期定位用
-  FLAGS_logtostderr = true;               // 开发期日志直出 stderr
 }
 
 namespace {
@@ -26,9 +22,13 @@ void HandleStopSignal(int sig) {
 
 }  // namespace
 
-int WaitForShutdownSignal() {
+void InstallShutdownHandlers() {
   std::signal(SIGINT, HandleStopSignal);
   std::signal(SIGTERM, HandleStopSignal);
+}
+
+int WaitForShutdownSignal() {
+  InstallShutdownHandlers();  // 幂等兜底：未提前安装的调用方仍安全
   while (g_stop_signal == 0) {
     std::this_thread::sleep_for(std::chrono::milliseconds{100});
   }

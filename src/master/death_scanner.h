@@ -17,9 +17,6 @@ namespace compress {
 
 class DeathScanner {
  public:
-  // 可注入时间源：生产传真实时钟，测试传假时钟（时间即测试输入数据）。
-  using Clock = std::function<std::int64_t()>;
-
   DeathScanner(ServerRegistry& registry, Clock clock,
                std::chrono::milliseconds ttl_ms,
                std::chrono::milliseconds scan_interval_ms);
@@ -31,10 +28,11 @@ class DeathScanner {
   void Start();  // 起扫描线程进入循环
   void Stop();   // 唤醒等待并 join；等待中调用立即返回
 
-  // 手动触发一轮清扫（测试/调试入口）；扫描线程内每周期也走这里。
+ private:
+  // 手动触发一轮清扫：Loop 专用，不对外暴露——运行中无合法的手动清扫调用方
+  // （启动清扫归宿主进程一次性执行；查询路径本身惰性过滤，不依赖摘除时机）。
   void RunOnce();
 
- private:
   void Loop();
 
   ServerRegistry& registry_;

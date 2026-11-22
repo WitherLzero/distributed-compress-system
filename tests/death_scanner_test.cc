@@ -23,21 +23,29 @@ WorkerInfo MakeWorker(const std::string& ep, int64_t hb) {
   return w;
 }
 
-// 1) RunOnce 手动触发一轮：只摘过期，保留存活（scanner 对 registry 的薄封装验证）
-TEST(DeathScannerTest, RunOnceRemovesOnlyExpired) {
+// 1) 只摘过期，保留存活：Start 后首扫即验证（RunOnce 收 private，改由线程驱动）
+TEST(DeathScannerTest, SweepRemovesOnlyExpired) {
   ServerRegistry reg;
   // fake_now=12000, ttl=5000 → floor=7000：hb=11000 存活，hb=1000 过期
   reg.Upsert(MakeWorker("10.0.0.1:8000", /*hb=*/11000));  // 存活
   reg.Upsert(MakeWorker("10.0.0.2:8000", /*hb=*/1000));   // 过期
 
-  int64_t fake_now = 12000;
+  std::atomic<int64_t> fake_now{12000};
   auto scanner = std::make_unique<DeathScanner>(
-      reg, [&] { return fake_now; },
-      /*ttl=*/milliseconds(5000), /*interval=*/milliseconds(100000));
-  scanner->RunOnce();
-  auto alive = reg.HealthyWorkers(fake_now, /*ttl=*/5000);
-  EXPECT_EQ(alive.size(), 1u);
+      reg, [&] { return fake_now.load(); },
+      /*ttl=*/milliseconds(5000), /*interval=*/milliseconds(20));
+  scanner->Start();
+  // 轮询等首扫摘除过期条目（deadline 2s，与时序解耦）
+  bool swept = false;
+  for (int i = 0; i < 100 && !swept; ++i) {
+    swept = reg.HealthyWorkers(fake_now.load(), 5000).size() == 1;
+    if (!swept) std::this_thread::sleep_for(milliseconds(20));
+  }
+  EXPECT_TRUE(swept) << "expired entry not swept";
+  auto alive = reg.HealthyWorkers(fake_now.load(), /*ttl=*/5000);
+  ASSERT_EQ(alive.size(), 1u);
   EXPECT_EQ(alive[0].endpoint, "10.0.0.1:8000");
+  scanner->Stop();
 }
 
 // 2) Start 后周期自动清扫：假时钟推进，过期条目在一个扫描周期内消失
