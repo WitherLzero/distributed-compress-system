@@ -9,8 +9,8 @@
 **Status:** ready-for-agent
 
 - [ ] 对真 master 注册 + 心跳：master 列表可见本实例，心跳持续刷新
-- [ ] 一条真实 4MB attachment 进 → LZ4 压缩结果出，compressed_len 正确（round-trip 单测背书）
-- [ ] 队列满时入队即拒绝，返回 ELIMIT 错误码
+- [x] 一条真实 4MB attachment 进 → LZ4 压缩结果出，compressed_len 正确（round-trip 单测背书）
+- [x] 队列满时入队即拒绝，返回 ELIMIT 错误码
 - [ ] 优雅退出不挂死，BRPC controller 等句柄生命周期合规并在代码注释注明
-- [ ] `ctest` 全绿，`-Wall -Wextra` 零警告
+- [x] `ctest` 全绿，`-Wall -Wextra` 零警告
 - [ ] 启动清扫 `.tmp` 残留（评审 Challenge-1 拍板，2026-11-16）：datanode 宿主启动序列中、注册 BRPC 服务之前，清空 `Options::temp_dir` 目录内容（只删文件，保留目录本体）；带预埋残留的单测（预埋 → 启动 → 目录空）。依据：设计文档 §3.1.4 启动清扫要求 + HDFS datanode initStorage block recovery 先例（启动一次性清扫）；Open 时顺手清扫已否决——.tmp 为多压缩线程共享目录，运行中清扫会误删兄弟任务在途半成品，启动时刻无在途任务是唯一安全窗口

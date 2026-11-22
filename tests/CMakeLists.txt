@@ -38,3 +38,9 @@ add_test(NAME death_scanner COMMAND death_scanner_test)
 add_executable(master_smoke_test master_smoke_test.cc)
 target_link_libraries(master_smoke_test PRIVATE master_core GTest::gtest GTest::gtest_main)
 add_test(NAME master_smoke COMMAND master_smoke_test)
+
+# CP4：Compress 端点接线（延迟 done + WorkerPool；同进程回环）
+add_executable(server_compress_test server_compress_test.cc)
+target_include_directories(server_compress_test PRIVATE ../src/server)
+target_link_libraries(server_compress_test PRIVATE server_core GTest::gtest GTest::gtest_main)
+add_test(NAME server_compress COMMAND server_compress_test)

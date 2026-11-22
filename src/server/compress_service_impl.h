@@ -1,27 +1,23 @@
-// compress_server 侧骨架（票 08）：压缩 RPC 服务实现。
-// 入队受并发上限约束，超限回 ELIMIT（设计文档 §7.2、§3.3.3）。
-// BRPC/protobuf 类型仅前向声明：签名冻结即可，W5 接入 BRPC 时引入生成头。
+// compress_server 侧（票 06 / CP4）：Compress RPC 服务实现——延迟 done 模式。
+// handler 只做打包入队（微秒级，不占 brpc 线程做毫秒级压缩）；done 随堆上任务交给
+// worker 线程在压缩完成后触发。队满走 ELIMIT 快路径：立即 SetFailed + Run。
 #pragma once
 
-namespace google::protobuf {
-class RpcController;
-class Closure;
-}  // namespace google::protobuf
-
-namespace compress::system {
-class CompressRequest;
-class CompressResponse;
-}  // namespace compress::system
+#include "compress_service.pb.h"
+#include "worker_pool.h"
 
 namespace compress {
 
-class CompressServiceImpl {
+class CompressServiceImpl : public system::CompressService {
  public:
-  CompressServiceImpl() = default;
+  explicit CompressServiceImpl(WorkerPool& pool) : pool_(pool) {}
 
-  void Compress(google::protobuf::RpcController* ctrl,
-                const ::compress::system::CompressRequest* req,
-                ::compress::system::CompressResponse* resp, google::protobuf::Closure* done);
+  void Compress(google::protobuf::RpcController* cntl,
+                const system::CompressRequest* req, system::CompressResponse* resp,
+                google::protobuf::Closure* done) override;
+
+ private:
+  WorkerPool& pool_;
 };
 
 }  // namespace compress
