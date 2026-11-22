@@ -28,6 +28,12 @@ target_include_directories(server_registry_test PRIVATE ../src/master)
 target_link_libraries(server_registry_test PRIVATE BRPC::brpc GTest::gtest GTest::gtest_main Threads::Threads)
 add_test(NAME server_registry COMMAND server_registry_test)
 
+add_executable(death_scanner_test death_scanner_test.cc
+    ../src/master/server_registry.cpp ../src/master/death_scanner.cpp)
+target_include_directories(death_scanner_test PRIVATE ../src/master)
+target_link_libraries(death_scanner_test PRIVATE BRPC::brpc GTest::gtest GTest::gtest_main Threads::Threads)
+add_test(NAME death_scanner COMMAND death_scanner_test)
+
 # CP0：BRPC 通信链路冒烟（同进程 server+client，验证 Heartbeat 收发）
 add_executable(master_smoke_test master_smoke_test.cc)
 target_link_libraries(master_smoke_test PRIVATE compress_proto BRPC::brpc GTest::gtest GTest::gtest_main)

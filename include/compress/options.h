@@ -13,6 +13,10 @@ struct Options {
   double min_saving_ratio = 0.10;  // 整块节省率阈值，低于则放弃压缩（§5.4）
   std::string temp_dir;            // AtomicReplacer 临时目录；空 = <目标目录>/.tmp/。
                                    // 须与目标文件同卷（st_dev 校验，跨卷 Open 即拒绝）
+  // 判死参数（§3.2：阈值按心跳周期倍数设定，扫描周期远小于阈值）
+  int heartbeat_interval_sec = 5;  // server 心跳周期
+  int death_ttl_sec = 20;          // 判死阈值 = 心跳间隔 × 4，容忍偶发丢失与抖动
+  int death_scan_interval_sec = 2; // 判死扫描周期，1~2s 取上限
 };
 
 }  // namespace compress
