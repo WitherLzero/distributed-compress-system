@@ -44,3 +44,9 @@ add_executable(server_compress_test server_compress_test.cc)
 target_include_directories(server_compress_test PRIVATE ../src/server)
 target_link_libraries(server_compress_test PRIVATE server_core GTest::gtest GTest::gtest_main)
 add_test(NAME server_compress COMMAND server_compress_test)
+
+# CP5：心跳客户端（真 master 服务端 + reporter 被测件）
+add_executable(heartbeat_reporter_test heartbeat_reporter_test.cc)
+target_include_directories(heartbeat_reporter_test PRIVATE ../src/server ../src/master)
+target_link_libraries(heartbeat_reporter_test PRIVATE server_core master_core GTest::gtest GTest::gtest_main)
+add_test(NAME heartbeat_reporter COMMAND heartbeat_reporter_test)
