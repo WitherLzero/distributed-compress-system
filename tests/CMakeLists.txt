@@ -21,7 +21,9 @@ add_executable(atomic_replacer_test atomic_replacer_test.cc)
 target_link_libraries(atomic_replacer_test PRIVATE compress_meta GTest::gtest GTest::gtest_main)
 add_test(NAME atomic_replacer COMMAND atomic_replacer_test)
 
-# CP1：ServerRegistry 纯逻辑（四态流转 + 并发不变量；TSAN 下验证无竞态）
+# CP1：ServerRegistry 纯逻辑（四态流转 + 并发不变量）。
+# 注：本 target 经 bvar 链接 BRPC，TSAN 对链接 BRPC 的目标无判别力（票 05 欠账节），
+# TSAN 验证仅适用于不链 BRPC 的纯 std 构建。
 add_executable(server_registry_test server_registry_test.cc
     ../src/master/server_registry.cpp)
 target_include_directories(server_registry_test PRIVATE ../src/master)

@@ -21,7 +21,7 @@ class MasterRuntime {
   MasterRuntime& operator=(const MasterRuntime&) = delete;
 
   // 起 BRPC 服务与判死扫描。port=0 由内核分配（测试）。
-  // 返回实际监听端口；失败返回 -1（错误经 glog 输出）。
+  // 返回实际监听端口；失败返回 -1（错误经 butil 日志输出，master/server 进程 glog-free）。
   int Start(int port);
 
   // 优雅退出：先停扫描线程（不再动注册表），再停 BRPC（不再来新请求）。

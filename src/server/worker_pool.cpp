@@ -22,14 +22,17 @@ WorkerPool::WorkerPool(std::size_t worker_count, std::size_t queue_capacity)
   }
 }
 
-bool WorkerPool::TryPush(RpcCompressTaskPtr task) {
+WorkerPool::EnqueueResult WorkerPool::TryPush(RpcCompressTaskPtr task) {
   std::lock_guard<std::mutex> lock(mu_);
-  if (closed_ || queue_.size() >= capacity_) {
-    return false;  // 背压拒绝：task 原样交还调用方处置（handler 走 ELIMIT 快路径）
+  if (closed_) {
+    return EnqueueResult::kClosed;  // 停机拒绝：handler 回 ELOGOFF
+  }
+  if (queue_.size() >= capacity_) {
+    return EnqueueResult::kFull;  // 背压拒绝：handler 回 ELIMIT 快路径
   }
   queue_.push_back(std::move(task));
   cv_.notify_one();
-  return true;
+  return EnqueueResult::kOk;
 }
 
 void WorkerPool::Stop() noexcept {

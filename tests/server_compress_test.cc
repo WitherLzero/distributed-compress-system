@@ -162,6 +162,21 @@ TEST_F(ServerCompressTest, QueueFullRejectedWithElimit) {
 }
 
 // 4) 停机排干不挂死：0 worker 让任务滞留队列，Stop 后 client 收到 FAILED 而非悬挂
+// 5) TryPush 三分态（池级直测）：满=kFull→ELIMIT；停机=kClosed→ELOGOFF（§5.5 区分）
+TEST(WorkerPoolEnqueueTest, TryPushReportsFullAndClosedDistinctly) {
+  {  // 容量 0：入队即满
+    WorkerPool full_pool(0, 0);
+    auto t = std::make_unique<RpcCompressTask>();
+    EXPECT_EQ(full_pool.TryPush(std::move(t)), WorkerPool::EnqueueResult::kFull);
+  }
+  {  // 已停机：空池也拒，且与满不同码
+    WorkerPool closed_pool(0, 4);
+    closed_pool.Stop();
+    auto t = std::make_unique<RpcCompressTask>();
+    EXPECT_EQ(closed_pool.TryPush(std::move(t)), WorkerPool::EnqueueResult::kClosed);
+  }
+}
+
 TEST_F(ServerCompressTest, StopFailsQueuedTasksWithoutHanging) {
   StartService(0, 1);
   const std::string payload = MakePayload(64, false);

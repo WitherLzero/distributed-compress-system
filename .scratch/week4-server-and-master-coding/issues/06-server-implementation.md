@@ -18,3 +18,7 @@
 - 心跳失败退避决策：维持固定 fallback 周期（默认 5s），不引入指数退避。算账：master 重启窗口秒级，最坏 N×几跳空转，300 台 × 5s = 60 QPS 已由 master max_concurrency=256 兜底；指数退避+jitter 属 10^4~10^5 台规模技术（gRPC/etcd 连接治理），本期过度设计。首跳失败后 Loop 按 fallback 周期重试（无紧贴即时重试），心跳 RPC 超时 2s 封顶单次失败。issue 07 storm 场景不退避。
 
 - [x] ~~启动清扫 .tmp 残留~~ **归属纠正（2026-11-24）**：清扫属 datanode（client）侧职责——设计文档 §3.1.4 L163 写明"datanode 启动时须扫描清理 temp 目录"，且 server 是无状态计算进程、无落盘路径，不产生 .tmp 半成品。已从 ServerRuntime 撤出（SweepTempDir/测试用例/--temp_dir flag 全删），该验收项由 W5 client 票继承（AtomicReplacer 消费方所在）。本条仅作历史记录保留。
+
+**设计挑战裁决（PR #2 评审，2026-11-25）：**
+- [Challenge-3] ELOGOFF 缺位 → **补实现**：TryPush 改三分态（kOk/kFull/kClosed），kFull→ELIMIT、kClosed→ELOGOFF（§5.5 两行均有实现背书；client 可区分"暂时满"与"退出中"）。池级单测 TryPushReportsFullAndClosedDistinctly 背书。
+- [Challenge-4] codec 输入 4MB memcpy（IOBuf→std::string 连续化）→ **记账 W5 评估**：LZ4 压缩 4MB ≈ 数 ms，memcpy ≈ 0.4ms（~5% 开销）；若 W5 client 同走此接口且 storm 实测 CPU 见顶，再评估 ICodec 升级 IOBuf/iovec scatter 输入（LZ4F/zstd/LZMA 均支持分块流式输入）。

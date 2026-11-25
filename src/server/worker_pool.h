@@ -47,8 +47,13 @@ class WorkerPool {
   WorkerPool(const WorkerPool&) = delete;
   WorkerPool& operator=(const WorkerPool&) = delete;
 
-  /// 非阻塞入队：满或已关闭立即拒绝（false）。成功后所有权移交池。
-  bool TryPush(RpcCompressTaskPtr task);
+  /// 入队结果三分态：kOk 成功；kFull 队列满（调用方回 ELIMIT）；kClosed 已停机
+  /// （调用方回 ELOGOFF，§5.5：退出中拒绝与队列满在可观测性上区分，client 可据此
+  /// 对该实例短期降权）。
+  enum class EnqueueResult { kOk, kFull, kClosed };
+
+  /// 非阻塞入队：满或已关闭立即拒绝。成功后所有权移交池；拒绝时 task 原样交还。
+  EnqueueResult TryPush(RpcCompressTaskPtr task);
 
   /// 幂等停机：关队列入口 → 唤醒 → 等 worker 排干存量退出 → 残余逐个补 Run(FAILED)。
   void Stop() noexcept;
