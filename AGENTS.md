@@ -20,4 +20,4 @@ Windows + WSL2 双副本协作约定（git 拓扑、两侧分工、git 纪律、
 
 ### Collaboration protocol
 
-人机协作节奏（实现票 → 检查点 → 四拍循环、学习三层细度）：`docs/agents/collaboration-protocol.md`。
+人机协作节奏（实现票 → 检查点 → 四拍循环、学习三层细度）：`docs/agents/collaboration-protocol.md`；设计挑战机制（评审伴生的质疑清单与答疑分流）见其 §7。
