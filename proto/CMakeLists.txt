@@ -1,5 +1,5 @@
-# IDL -> 消息代码：构建期 protoc 生成，产物落在 build 树（generated/），不入库。
-# W3 只消费消息类型（FakeRpc 接缝）；service 桩生成（protoc-gen-brpc）随 W5 BRPC 接入。
+# IDL -> 消息+service 代码：构建期 protoc 生成，产物落在 build 树（generated/），不入库。
+# cc_generic_services=true 使 protoc 同时生成 Service/Stub 基类（BRPC 直接消费）。
 find_package(Protobuf REQUIRED)   # apt 包无 CMake config，走 CMake 自带 FindProtobuf 模块
 
 set(PROTO_FILE compress_service.proto)

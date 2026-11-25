@@ -1,15 +1,37 @@
-// 压缩结果落盘的唯一替换通道（ADR-0003 纪律，票 08 实写）：
-// 同目录临时文件（mkstemp）→ 写入 → fsync → 原子 rename；析构与失败路径自动清理，不留半成品。
+// 压缩结果落盘的唯一替换通道实现（ADR-0003 纪律）：
+// 同卷专用临时目录（默认 <目标目录>/.tmp/）mkstemp → 写入 → fsync → 原子 rename；
+// Open() 时 st_dev 比对保证 rename 不跨文件系统（跨卷 EXDEV fail-fast）；
+// 析构与失败路径自动清理，不留半成品。
 #include "compress/atomic_replacer.h"
 
 #include <fcntl.h>
+#include <sys/stat.h>
 #include <unistd.h>
 
+#include <cstdlib>
+#include <filesystem>
+#include <system_error>
 #include <vector>
 
-namespace compress {
+namespace fs = std::filesystem;
 
-AtomicReplacer::AtomicReplacer(std::string target_path) : target_path_(std::move(target_path)) {}
+namespace compress {
+namespace {
+
+// 比较两个目录的 st_dev（内核文件系统编号）：不同卷 rename 必炸（EXDEV）。
+bool SameFilesystem(const fs::path& a, const fs::path& b) noexcept {
+  struct stat sa {};
+  struct stat sb {};
+  if (::stat(a.c_str(), &sa) != 0 || ::stat(b.c_str(), &sb) != 0) {
+    return false;
+  }
+  return sa.st_dev == sb.st_dev;
+}
+
+}  // namespace
+
+AtomicReplacer::AtomicReplacer(std::string target_path, std::string temp_dir)
+    : target_path_(std::move(target_path)), temp_dir_(std::move(temp_dir)) {}
 
 AtomicReplacer::~AtomicReplacer() noexcept {
   if (!committed_) {
@@ -21,9 +43,36 @@ CompressErr AtomicReplacer::Open() noexcept {
   if (fd_ >= 0) {
     return CompressErr::kWrongState;  // 已开一轮：先 Commit/Abort 再重开
   }
-  // mkstemp 原地改写模板尾部，需可写缓冲；临时文件与目标同目录保证 rename 同文件系统。
-  std::vector<char> tmpl(target_path_.begin(), target_path_.end());
-  tmpl.push_back('.');
+
+  // 1) 解析临时目录：显式配置优先，否则 <目标目录>/.tmp/
+  fs::path target(target_path_);
+  fs::path parent = target.parent_path();
+  if (parent.empty()) {
+    parent = ".";  // 相对裸文件名：目标即当前目录
+  }
+  const fs::path tdir = temp_dir_.empty() ? parent / ".tmp" : fs::path(temp_dir_);
+
+  // 2) 目标目录必须已存在（mkdir -p 目标目录是调用方的职责，不越权补）
+  std::error_code ec;
+  if (!fs::is_directory(parent, ec)) {
+    return CompressErr::kIo;
+  }
+
+  // 3) 临时目录不存在则创建（HDFS 模式：卷内专用目录）
+  fs::create_directories(tdir, ec);
+  if (ec) {
+    return CompressErr::kIo;
+  }
+
+  // 4) 跨卷 fail-fast：rename 跨文件系统返回 EXDEV，提前拦截（防误配 /tmp/tmpfs）
+  if (!SameFilesystem(parent, tdir)) {
+    return CompressErr::kIo;
+  }
+
+  // 5) mkstemp 原地改写模板尾部，需可写缓冲
+  const std::string tmpl_path = (tdir / target.filename()).string();
+  std::vector<char> tmpl(tmpl_path.begin(), tmpl_path.end());
+  tmpl.insert(tmpl.end(), {'.'});
   tmpl.insert(tmpl.end(), {'t', 'm', 'p', '.', 'X', 'X', 'X', 'X', 'X', 'X'});
   tmpl.push_back('\0');
 

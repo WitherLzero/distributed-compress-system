@@ -15,12 +15,14 @@ find_library(BRPC_LIBRARY
     HINTS /usr/local/lib /usr/lib
 )
 
-# 静态链接 libbrpc.a 时的传递依赖（BRPC master 将以下库无条件链入，
-# brpc.pc 的 private_libs 里也是这些：-lssl -lcrypto -lleveldb ...）
+# 静态链接 libbrpc.a 时的传递依赖（brpc.pc Libs.private 全量：
+# -lprotoc -lleveldb -lgflags -lprotobuf -lssl -lcrypto -lz -ldl -lrt）
+# 顺序要求：gflags 必须在 brpc 之后（链接器从左到右解析符号）。
 find_library(BRPC_LEVELDB_LIBRARY NAMES leveldb)
 find_library(BRPC_SSL_LIBRARY NAMES ssl)
 find_library(BRPC_CRYPTO_LIBRARY NAMES crypto)
 find_library(BRPC_Z_LIBRARY NAMES z)
+find_library(BRPC_PROTOC_LIBRARY NAMES protoc)
 
 include(FindPackageHandleStandardArgs)
 find_package_handle_standard_args(BRPC
@@ -35,7 +37,7 @@ if(BRPC_FOUND AND NOT TARGET BRPC::brpc)
         IMPORTED_LOCATION "${BRPC_LIBRARY}"
         INTERFACE_INCLUDE_DIRECTORIES "${BRPC_INCLUDE_DIR}"
         INTERFACE_LINK_LIBRARIES
-            "${BRPC_LEVELDB_LIBRARY};${BRPC_SSL_LIBRARY};${BRPC_CRYPTO_LIBRARY};${BRPC_Z_LIBRARY}"
+            "${BRPC_LEVELDB_LIBRARY};${BRPC_SSL_LIBRARY};${BRPC_CRYPTO_LIBRARY};${BRPC_Z_LIBRARY};${BRPC_PROTOC_LIBRARY};gflags;protobuf;dl;rt"
     )
 endif()
 

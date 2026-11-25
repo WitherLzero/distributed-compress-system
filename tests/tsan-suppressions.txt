@@ -1,0 +1,4 @@
+# gcc-11 libtsan 已知误报：std::condition_variable::wait_for 内部 unlock 对拦截器不可见，
+# 令等待中的互斥量在主线程加锁时被记为 double lock（最小复现见本文件历史/KB 卡）。
+# 按帧名抑制，仅覆盖该模式；真实竞争仍正常报告。
+mutex:__gthread_mutex_lock

@@ -1,6 +1,17 @@
 // 统一编解码封装实现：LZ4 浅压 / LZMA 深压，同一调用面（codec.h）。
 // 算法失败（数据无法解析）归入 kInvalidArg：对外语义见设计文档 §6.2.2，
 // §5.5 业务层失败为库内日志原因，不经此层上抛。
+//
+// 实现备注（契约的依据，勿上翻进头文件）：
+// - out_cap 必要性：裸指针不带长度，底层 dstCapacity 与 kBufSmall 的精确回报
+//   都以它为输入（业界 LZ4F/zstd/lzma/brotli/POSIX read 无一例外带输出容量）；
+//   压缩侧调用方按 2× 原始大小纪律提供缓冲（设计文档 §3.1.3）。
+// - 解压侧 out_cap 兜两个底：正常路径定长切片输出上界 min(4MB, 块尾余量)
+//   精确已知；坏帧产出长度异常时靠它转 kInvalidArg 而非越界写；读路径任意
+//   窗口（宿主缓冲 < 4MB）也依赖它。
+// - LZ4 帧 contentSize（压缩侧写入）使解压 kBufSmall 时能精确回报所需容量；
+//   LZMA 的原始大小在流尾索引，one-shot API 不暴露，不保证回报。
+// - 参数类型现状 uint8_t*（lzma 同款）；void*/char* 选型待定，见 issue 03 第 2 项。
 #include "compress/codec.h"
 
 #include <lz4frame.h>
@@ -13,12 +24,10 @@ namespace {
 // 开内容校验和，解压侧能检出数据损坏。
 class Lz4Codec final : public ICodec {
  public:
-  size_t Compress(const std::uint8_t* in, size_t in_len, std::uint8_t* out, size_t out_cap,
-                  size_t* out_len, CompressErr* err) const noexcept override {
-    if (!err) return 0;
+  CompressErr Compress(const std::uint8_t* in, size_t in_len, std::uint8_t* out, size_t out_cap,
+                       size_t* out_len) const noexcept override {
     if (!in || !out || !out_len || in_len == 0) {
-      *err = CompressErr::kInvalidArg;
-      return 0;
+      return CompressErr::kInvalidArg;
     }
 
     LZ4F_preferences_t prefs{};
@@ -28,32 +37,26 @@ class Lz4Codec final : public ICodec {
     const size_t bound = LZ4F_compressFrameBound(in_len, &prefs);
     if (out_cap < bound) {
       *out_len = bound;
-      *err = CompressErr::kBufSmall;
-      return 0;
+      return CompressErr::kBufSmall;
     }
 
     const size_t n = LZ4F_compressFrame(out, out_cap, in, in_len, &prefs);
     if (LZ4F_isError(n)) {
-      *err = CompressErr::kInvalidArg;
-      return 0;
+      return CompressErr::kInvalidArg;
     }
     *out_len = n;
-    *err = CompressErr::kOk;
-    return n;
+    return CompressErr::kOk;
   }
 
-  size_t Decompress(const std::uint8_t* in, size_t in_len, std::uint8_t* out, size_t out_cap,
-                    size_t* out_len, CompressErr* err) const noexcept override {
-    if (!err) return 0;
+  CompressErr Decompress(const std::uint8_t* in, size_t in_len, std::uint8_t* out, size_t out_cap,
+                         size_t* out_len) const noexcept override {
     if (!in || !out || !out_len || in_len == 0) {
-      *err = CompressErr::kInvalidArg;
-      return 0;
+      return CompressErr::kInvalidArg;
     }
 
     LZ4F_dctx* dctx = nullptr;
     if (LZ4F_isError(LZ4F_createDecompressionContext(&dctx, LZ4F_VERSION))) {
-      *err = CompressErr::kInvalidArg;
-      return 0;
+      return CompressErr::kInvalidArg;
     }
 
     size_t dst_pos = 0;
@@ -87,47 +90,39 @@ class Lz4Codec final : public ICodec {
     if (e == CompressErr::kOk) {
       *out_len = dst_pos;
     }
-    *err = e;
-    return e == CompressErr::kOk ? dst_pos : 0;
+    return e;
   }
 };
 
 // LZMA one-shot（liblzma easy API），CRC64 校验。
 class LzmaCodec final : public ICodec {
  public:
-  size_t Compress(const std::uint8_t* in, size_t in_len, std::uint8_t* out, size_t out_cap,
-                  size_t* out_len, CompressErr* err) const noexcept override {
-    if (!err) return 0;
+  CompressErr Compress(const std::uint8_t* in, size_t in_len, std::uint8_t* out, size_t out_cap,
+                       size_t* out_len) const noexcept override {
     if (!in || !out || !out_len || in_len == 0) {
-      *err = CompressErr::kInvalidArg;
-      return 0;
+      return CompressErr::kInvalidArg;
     }
 
     const size_t bound = lzma_stream_buffer_bound(in_len);
     if (out_cap < bound) {
       *out_len = bound;
-      *err = CompressErr::kBufSmall;
-      return 0;
+      return CompressErr::kBufSmall;
     }
 
     size_t out_pos = 0;
     const lzma_ret r = lzma_easy_buffer_encode(LZMA_PRESET_DEFAULT, LZMA_CHECK_CRC64, nullptr, in,
                                                in_len, out, &out_pos, out_cap);
     if (r != LZMA_OK) {
-      *err = CompressErr::kInvalidArg;
-      return 0;
+      return CompressErr::kInvalidArg;
     }
     *out_len = out_pos;
-    *err = CompressErr::kOk;
-    return out_pos;
+    return CompressErr::kOk;
   }
 
-  size_t Decompress(const std::uint8_t* in, size_t in_len, std::uint8_t* out, size_t out_cap,
-                    size_t* out_len, CompressErr* err) const noexcept override {
-    if (!err) return 0;
+  CompressErr Decompress(const std::uint8_t* in, size_t in_len, std::uint8_t* out, size_t out_cap,
+                         size_t* out_len) const noexcept override {
     if (!in || !out || !out_len || in_len == 0) {
-      *err = CompressErr::kInvalidArg;
-      return 0;
+      return CompressErr::kInvalidArg;
     }
 
     std::uint64_t memlimit = ~static_cast<std::uint64_t>(0);
@@ -137,16 +132,13 @@ class LzmaCodec final : public ICodec {
                                                  &out_pos, out_cap);
     if (r == LZMA_OK) {
       *out_len = out_pos;
-      *err = CompressErr::kOk;
-      return out_pos;
+      return CompressErr::kOk;
     }
     if (r == LZMA_BUF_ERROR) {
       // 输入没消费完 = 数据截断/损坏；消费完仍装不下 = 缓冲不足。
-      *err = (in_pos < in_len) ? CompressErr::kInvalidArg : CompressErr::kBufSmall;
-      return 0;
+      return (in_pos < in_len) ? CompressErr::kInvalidArg : CompressErr::kBufSmall;
     }
-    *err = CompressErr::kInvalidArg;
-    return 0;
+    return CompressErr::kInvalidArg;
   }
 };
 
