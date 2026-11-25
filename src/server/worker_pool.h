@@ -53,6 +53,9 @@ class WorkerPool {
   /// 幂等停机：关队列入口 → 唤醒 → 等 worker 排干存量退出 → 残余逐个补 Run(FAILED)。
   void Stop() noexcept;
 
+  /// 排队快照（心跳上报 queue_len 用）：mu_ 内读 size，O(1)。
+  std::size_t PendingTasks();
+
  private:
   void WorkerLoop();
   static void FailTask(RpcCompressTaskPtr task, const char* msg) noexcept;

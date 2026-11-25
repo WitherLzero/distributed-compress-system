@@ -109,4 +109,9 @@ void WorkerPool::FailTask(RpcCompressTaskPtr task, const char* msg) noexcept {
   task->done->Run();
 }
 
+std::size_t WorkerPool::PendingTasks() {
+  std::lock_guard<std::mutex> lk(mu_);
+  return queue_.size();
+}
+
 }  // namespace compress

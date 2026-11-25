@@ -17,6 +17,8 @@
 
 namespace compress {
 
+// 一跳的负载快照：取样与上报间隔 = 心跳周期，消费方拿到的数据新鲜度 ≤ 周期。
+// 该语义与设计 §3.2 一致——master 只透传不二次过滤，陈旧度由消费方（W5 选点）自担。
 struct LoadSample {
   double cpu_percent;
   double mem_percent;

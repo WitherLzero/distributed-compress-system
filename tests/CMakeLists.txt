@@ -50,3 +50,15 @@ add_executable(heartbeat_reporter_test heartbeat_reporter_test.cc)
 target_include_directories(heartbeat_reporter_test PRIVATE ../src/server ../src/master)
 target_link_libraries(heartbeat_reporter_test PRIVATE server_core master_core GTest::gtest GTest::gtest_main)
 add_test(NAME heartbeat_reporter COMMAND heartbeat_reporter_test)
+
+# CP6：ServerRuntime 组合根端到端（真 master + 真 server 同进程）
+add_executable(server_runtime_test server_runtime_test.cc)
+target_include_directories(server_runtime_test PRIVATE ../src/server ../src/master)
+target_link_libraries(server_runtime_test PRIVATE server_core master_core GTest::gtest GTest::gtest_main)
+add_test(NAME server_runtime COMMAND server_runtime_test)
+
+# CP6：心跳负载取样（CPU 增量 / MEM 余量，reader 注入可测）
+add_executable(load_sampler_test load_sampler_test.cc)
+target_include_directories(load_sampler_test PRIVATE ../src/server)
+target_link_libraries(load_sampler_test PRIVATE server_core GTest::gtest GTest::gtest_main)
+add_test(NAME load_sampler COMMAND load_sampler_test)
