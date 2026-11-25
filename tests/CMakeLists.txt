@@ -59,8 +59,19 @@ target_include_directories(server_runtime_test PRIVATE ../src/server ../src/mast
 target_link_libraries(server_runtime_test PRIVATE server_core master_core GTest::gtest GTest::gtest_main)
 add_test(NAME server_runtime COMMAND server_runtime_test)
 
+# 票 07 CP7.1：查询 harness + 多实例烟测（ctest 走快进参数，验收人工跑标准参数）
+add_executable(smoke_query smoke_query.cc)
+target_link_libraries(smoke_query PRIVATE compress_proto BRPC::brpc)
+
 # CP6：心跳负载取样（CPU 增量 / MEM 余量，reader 注入可测）
 add_executable(load_sampler_test load_sampler_test.cc)
 target_include_directories(load_sampler_test PRIVATE ../src/server)
 target_link_libraries(load_sampler_test PRIVATE server_core GTest::gtest GTest::gtest_main)
 add_test(NAME load_sampler COMMAND load_sampler_test)
+
+add_test(NAME multi_instance_smoke
+  COMMAND bash ${CMAKE_CURRENT_SOURCE_DIR}/smoke_multi_instance.sh --build-dir ${CMAKE_BINARY_DIR})
+set_tests_properties(multi_instance_smoke PROPERTIES
+  ENVIRONMENT "SMOKE_FAST=1"
+  TIMEOUT 120
+  LABELS smoke)
