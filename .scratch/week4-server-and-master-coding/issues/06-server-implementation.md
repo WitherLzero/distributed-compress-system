@@ -21,4 +21,4 @@
 
 **设计挑战裁决（PR #2 评审，2026-11-25）：**
 - [Challenge-3] ELOGOFF 缺位 → **补实现**：TryPush 改三分态（kOk/kFull/kClosed），kFull→ELIMIT、kClosed→ELOGOFF（§5.5 两行均有实现背书；client 可区分"暂时满"与"退出中"）。池级单测 TryPushReportsFullAndClosedDistinctly 背书。
-- [Challenge-4] codec 输入 4MB memcpy（IOBuf→std::string 连续化）→ **默认不做 scatter 演进，举证责任在演进方**（2026-11-25 学员拍板）：业界压缩服务主流即连续输入（RocksDB/HDFS/Kafka），memcpy ~10GB/s vs LZ4 ~500MB/s 差 20 倍，浅压占比仅 ~5%；流式 API 的真实动机是输入长度未知/内存受限，非省 memcpy。仅当票 07 storm 实测证明 memcpy 为瓶颈时重开评估。
+- [Challenge-4] codec 输入 4MB memcpy（IOBuf→std::string 连续化）→ **默认不做 scatter 演进，举证责任在演进方**（2026-11-25 学员拍板）：业界压缩服务主流即连续输入（RocksDB/HDFS/Kafka），memcpy ~10GB/s vs LZ4 ~500MB/s 差 20 倍，浅压占比仅 ~5%；流式 API 的真实动机是输入长度未知/内存受限，非省 memcpy。仅当票 07 storm 实测证明 memcpy 为瓶颈时重开评估。（2026-11-25 票 07 storm 格收尾：storm 只发心跳不产生压缩流量，memcpy 占比无从触发，维持关闭。）
