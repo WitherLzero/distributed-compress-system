@@ -68,6 +68,9 @@ add_executable(load_sampler_test load_sampler_test.cc)
 target_include_directories(load_sampler_test PRIVATE ../src/server)
 target_link_libraries(load_sampler_test PRIVATE server_core GTest::gtest GTest::gtest_main)
 add_test(NAME load_sampler COMMAND load_sampler_test)
+# 票 07 CP7.2：storm 格工具（手动运行，不进 ctest——压测时长与观测节奏由人掌控）
+add_executable(storm_client storm_client.cc)
+target_link_libraries(storm_client PRIVATE compress_proto BRPC::brpc)
 
 add_test(NAME multi_instance_smoke
   COMMAND bash ${CMAKE_CURRENT_SOURCE_DIR}/smoke_multi_instance.sh --build-dir ${CMAKE_BINARY_DIR})

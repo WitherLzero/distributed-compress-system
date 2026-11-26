@@ -37,8 +37,9 @@ int MasterRuntime::Start(int port) {
   }
   // 慢 handler 并发上限（写者饿死解法阶梯第一层：入口限并发，读者数有上界）。
   // 算账：心跳 300 实例 × 5s 周期 = 60 QPS，256 上限 ≈ 4 倍冗余；查询由 client
-  // 周期拉取（§3.2），64 上界防慢 handler 并发打爆。语义是熔断阀门不是容量规划，
-  // 联调期按 storm 格实测标定（与 §3.3.4 内存预算同款处理）。
+  // 周期拉取（§3.2），64 上界防慢 handler 并发打爆。语义是熔断阀门不是容量规划。
+  // storm 实测标定（2026-11-25）：300 渐起/300 爆发/1000 爆发三档零失败，
+  // CPU profile 平（最大单帧 2.67%），在途并发远低于上限，64/256 维持。
   if (server_.AddService(&master_svc_, brpc::SERVER_DOESNT_OWN_SERVICE) != 0) {
     LOG(ERROR) << "AddService MasterService failed";
     return -1;

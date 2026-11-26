@@ -17,7 +17,7 @@
 - [x] `ctest` 全绿，`-Wall -Wextra` 零警告
 
 **同步义务（遗留记录）：**
-- `max_concurrency`（查询 64 / 心跳 256）为算账推定值，联调期按 storm 实测标定后回填注释。
+- ~~`max_concurrency`（查询 64 / 心跳 256）为算账推定值，联调期按 storm 实测标定后回填注释。~~ **已标定（2026-11-25，票 07 storm 格）**：300 渐起/300 爆发/1000 爆发三档零失败、CPU profile 平，在途并发远低于上限，64/256 维持，代码注释已回填实测依据（master_runtime.cpp）。
 - proto `WorkerInfo` 字段与 `server_registry.h` 内部结构为手工同步，proto 变更时必须同步更新 registry/service 两侧。
 
 **已知构建约束（欠账）：** TSAN 构建不得链接 glog——brpc 以 WITH_GLOG=OFF 构建（内嵌 butil 注册 `-v`），与系统 glog 的 `-v` 双重注册导致 main 之前 abort；已实证不含 glog 的 TSAN 构建可正常运行（registry/scanner 测试零报告）。长期解法二选一：brpc 重装为 WITH_GLOG=ON，或为纯 std 组件建立不含 BRPC 链接的最小 TSAN 测试 target。
