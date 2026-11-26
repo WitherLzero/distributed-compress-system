@@ -15,7 +15,7 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 if [[ -z "$BUILD_DIR" ]]; then
-  BUILD_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+  BUILD_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/build"
 fi
 MASTER_BIN="$BUILD_DIR/src/master/compress_master"
 SERVER_BIN="$BUILD_DIR/src/server/compress_server"
