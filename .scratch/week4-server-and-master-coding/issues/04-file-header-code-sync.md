@@ -1,6 +1,6 @@
 # 04 — 文件头布局改存 offset：代码侧同步
 
-- **Status**: ready-for-agent
+- **Status**: completed（2026-11-26：16B 条目代码同步与单测落地，commit 5bc1221）
 - **依据**: issue 02 决策（2026-11-16，方案 A 定稿）；设计文档 §7.1 已更新
 
 ## 背景
@@ -19,8 +19,8 @@
 
 ## Acceptance
 
-- [ ] `meta_header` 结构体与磁盘布局对齐方案 A（16B 条目 + 头部 compressed_len）
-- [ ] 单测更新并通过（容量、体积、一致性自检）
-- [ ] W3 issue 06 表述回填 superseded 标注
+- [x] `meta_header` 结构体与磁盘布局对齐方案 A（16B 条目 + 头部 compressed_len）
+- [x] 单测更新并通过（容量、体积、一致性自检）
+- [x] W3 issue 06 表述回填 superseded 标注
 
 ## Comments

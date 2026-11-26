@@ -1,6 +1,6 @@
 # Week 4 — Server 与 Master 模块编码（含第 4 课反馈落地）
 
-- **Status**: in-progress
+- **Status**: completed（2026-11-26：Server 与 Master 100% 收官，全票关闭；D5 push 待执行）
 - **Owner**: 林昕祺
 - **依据**: 实习大纲 W4——"按设计文档完成 Server 与 Master 模块编码"（`meeting/实习工作安排大纲（飞书存档）.md`）；第 4 课导师反馈（`meeting/见识星球 昕棋 软件研发实习第4课.md`，2026-11-14）
 - **导师课**: 第 4 课复盘 W3 进展（文档 v0.3 + 脚手架已合并，PR #1）
@@ -16,12 +16,12 @@
 
 | 交付物 | 落点 | 状态 |
 |---|---|---|
-| 第 4 课反馈清单逐条处理 | 设计文档 + GLOSSARY + 本目录 issue | ⬜ issue 01 |
-| 文件头 offset 决策重新定稿 | issue 02-D 结论修订 + issue 06 + 视情况新 ADR | ⬜ issue 02（待讨论） |
-| codec 接口与序列化代码修订 | WSL 侧 `src/common/`，`feat/` 分支 | ⬜ issue 03 |
-| server / master 可执行二进制 | WSL 侧（大纲 W4 交付物） | ⬜ issue 05 / 06 |
-| Master-Server 多实例联调脚本 | WSL 侧 `scripts/`：拉起/杀死多个 server 实例，验证注册→心跳→判死→列表流转 | ⬜ issue 07 |
-| Client 测试 harness（无业务） | gtest/CLI：GetWorkersInfo 断言实例列表；收发一次真压缩往返 | ⬜ 随 issue 07 |
+| 第 4 课反馈清单逐条处理 | 设计文档 + GLOSSARY + 本目录 issue | ✅ issue 01 |
+| 文件头 offset 决策重新定稿 | ADR-0006 + §7.1 + issue 04 代码同步 | ✅ issue 02 |
+| codec 接口与序列化代码修订 | WSL 侧 `src/codec`、`src/meta` | ✅ issue 03（第 2 项类型选型待导师） |
+| server / master 可执行二进制 | WSL 侧（大纲 W4 交付物） | ✅ issue 05 / 06 |
+| Master-Server 多实例联调脚本 | WSL 侧 `tests/smoke_multi_instance.sh` + `tests/smoke_query.cc` | ✅ issue 07 |
+| Client 测试 harness（无业务） | smoke_query CLI + server_compress 测试内真压缩往返 | ✅ 随 issue 07 |
 
 ## Acceptance
 
@@ -56,10 +56,10 @@
 
 | # | 标题 | 状态 |
 |---|---|---|
-| 01 | 第 4 课反馈——可直接处理项 | needs-triage |
-| 02 | 文件头切片条目改存 offset——决策重议 | needs-triage（待讨论） |
-| 03 | codec 接口返回值与序列化契约修订 | ready-for-agent |
-| 04 | 文件头 16B 条目——代码侧同步 | ready-for-agent |
+| 01 | 第 4 课反馈——可直接处理项 | completed |
+| 02 | 文件头切片条目改存 offset——决策重议 | completed |
+| 03 | codec 接口返回值与序列化契约修订 | completed（第 2 项类型选型待导师） |
+| 04 | 文件头 16B 条目——代码侧同步 | completed |
 | 05 | Master 模块编码（注册表/判死扫描/查询下发） | ready-for-agent（依赖 03/04） |
 | 06 | Server 模块编码（注册心跳/真压缩端点/线程池） | ready-for-agent（依赖 03/04） |
 | 07 | Master-Server 多实例联调脚本 | ready-for-agent（依赖 05/06） |

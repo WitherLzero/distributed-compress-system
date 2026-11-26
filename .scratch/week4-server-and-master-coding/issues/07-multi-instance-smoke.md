@@ -13,7 +13,7 @@ Client 侧仅测试 harness（查询断言用），不含任何业务逻辑—�
 
 **Blocked by:** 05: Master 模块；06: Server 模块
 
-**Status:** ready-for-agent
+**Status:** completed（2026-11-26：手动+一键联调、storm 三档标定、判死时延实测与重复执行收官）
 
 - [x] 脚本一键跑通：起 master → 起 N server → 列表断言 → 强杀实例 → 列表收缩断言 → 清理
 - [x] storm 格：单进程 storm-client 模拟 N=300 虚拟实例并发心跳（渐起+爆发双模式），QPS 精确命中预期（299.8/300.0/1000.0）；锁竞争经 perf cpu-clock 火焰图判读无热点（libbrpc.a 未编 profiler，/hotspots 不可用，以 perf + addr2line 解析链替代），实测数据见下方记录
@@ -35,3 +35,9 @@ Client 侧仅测试 harness（查询断言用），不含任何业务逻辑—�
 - storm-client 连接面：brpc SocketMap 按 {对端, ChannelSignature} 全局共享 socket（默认签名全零），须以 connection_group 逐实例区分才是真实 N 连接（channel.cpp ComputeChannelSignature）。
 
 **验证依赖注记（2026-11-24）：** BRPC 链路并发正确性验证 = 压测连跑 + 锁纪律代码审查（TSAN 对 bthread 协程切换无判别力，见票 05 欠账节）；storm 场景不退避（固定 fallback 周期，算账见票 06 尾注）。
+
+## CP7.3 收官记录（2026-11-26）
+
+**判死时延实测**（快进档：心跳 1s / ttl 2s / 扫描 1s）：kill -9 后以 smoke_query 200ms 轮询，三轮 kill→列表消失 = 1811 / 1799 / 1803 ms。分解 = 距下一次 ttl 到期（kill 发生在注册确认后，末跳约 +0.2~1s）+ 扫描取整，理论上界 ttl+scan=3s 未触及；三轮极差 12ms，判死链路时延稳定。
+
+**重复执行**：标准档（心跳 5s / ttl 20s / 扫描 1s）连跑 3 次全 PASS，进程与监听端口复核零残留。顺手修复脚本 BUILD_DIR 默认值（原默认指向 tests/ 自身，从仓库根直接调用找不到二进制）。

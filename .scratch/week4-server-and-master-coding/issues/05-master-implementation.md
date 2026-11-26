@@ -8,7 +8,7 @@
 
 **Blocked by:** 04: 文件头 16B——代码侧同步（契约冻结先行）
 
-**Status:** ready-for-agent
+**Status:** completed（2026-11-26：注册表/判死/三 RPC/组合根全链落地，storm 三档实测标定 MaxConcurrency；TSAN 判别力欠账见票尾欠账节）
 
 - [x] registry 单测覆盖 注册→心跳刷新→查询→判死移除 四态流转
 - [x] 判死扫描单测：构造超时条目，扫描后消失；未超时条目保留（另有 Stop 及时性与并发压力用例）

@@ -1,6 +1,6 @@
 # 03 — codec 接口返回值与序列化契约修订
 
-- **Status**: ready-for-agent（2026-11-16 六项结论已与学员逐条对齐；第 2 项类型选型待导师口头确认后执行）
+- **Status**: completed（2026-11-26：五项落地于 commit 5bc1221；第 2 项参数类型维持 uint8_t* 待导师确认）
 - **依据**: `meeting/见识星球 昕棋 软件研发实习第4课.md`（2026-11-14），时间戳 19:57–22:28、34:04–38:20、29:39–30:16
 - **讨论记录**: 2026-11-16 与学员逐项过完六个子题，结论如下（含业界对照）
 
@@ -84,11 +84,11 @@ virtual CompressErr Compress(const char* in, size_t in_len, char* out,
 
 ## Acceptance
 
-- [ ] `Compress/Decompress` 返回值改为 `CompressErr`，`err` 出参删除，`out_len` 双语义注释明确，调用点全部适配
+- [x] `Compress/Decompress` 返回值改为 `CompressErr`，`err` 出参删除，`out_len` 双语义注释明确，调用点全部适配
 - [ ] 参数类型按导师确认结论改定（`void*` 为默认建议项），调用点适配
-- [ ] codec.h `out_cap` 注释补边界检查依据说明
-- [ ] 序列化处值初始化（`{}` 或 memset 结构体），codec.h 写入契约注释，双序列化逐字节一致单测
-- [ ] AtomicReplacer temp 目录配置化 + `st_dev` 同卷校验，单测三条（隔离/替换/跨卷拒绝）
-- [ ] `ctest` 一键全绿，`-Wall -Wextra` 无警告
+- [x] codec.h `out_cap` 注释补边界检查依据说明
+- [x] 序列化处值初始化（`{}` 或 memset 结构体），codec.h 写入契约注释，双序列化逐字节一致单测
+- [x] AtomicReplacer temp 目录配置化 + `st_dev` 同卷校验，单测三条（隔离/替换/跨卷拒绝）
+- [x] `ctest` 一键全绿，`-Wall -Wextra` 无警告
 
 ## Comments
